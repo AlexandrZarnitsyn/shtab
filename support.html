@@ -1,0 +1,31 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>ШТАБ — центр поддержки</title><link rel="stylesheet" href="assets/styles.css?v=202" /><script>(function(){try{var t=localStorage.getItem('shtab_theme_v1')||'light';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang','ru');}catch(e){}})();</script><style>
+.wide-page .table th,.wide-page .table td{font-size:13px}
+.filters-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px}
+.grid-2x{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}
+.stack-list{display:grid;gap:12px}
+.issue{border-left:3px solid #f59e0b;padding:12px 14px;background:rgba(245,158,11,.08);border-radius:12px}
+.issue.critical{border-left-color:#ef4444;background:rgba(239,68,68,.08)}
+.issue.info{border-left-color:#60a5fa;background:rgba(96,165,250,.08)}
+.small-muted{color:var(--muted);font-size:13px}
+@media (max-width:1100px){.filters-grid,.grid-2x{grid-template-columns:1fr}}
+</style></head><body class="page-loading wide-page"><div class="container"><div class="topbar"><div class="brand"><div class="brand-text"><strong>ШТАБ</strong><span id="who">Центр поддержки</span></div></div><div class="nav"><a href="admin.html" id="superAdminLink" style="display:none">Админка</a><a href="admin.html">Сводка</a><a href="clients.html">Клиенты и подписки</a><a href="support.html">Центр поддержки</a><a href="#" onclick="clearSession();return false;">Выйти</a></div></div><div class="page-shell">
+<section class="card clean"><div class="page-head"><div><h1 style="margin-top:12px">Центр поддержки</h1><p>Только ошибки, токены, синхронизации, неактивные клиенты и проблемные подключения.</p></div></div></section>
+<section class="grid-2x"><div class="card"><div class="section-title"><h2>Критичные уведомления</h2><div class="small-muted" id="notifCount"></div></div><div id="notifList" class="stack-list"></div></div><div class="card"><div class="section-title"><h2>Проблемные клиенты</h2><div class="small-muted" id="issuesCount"></div></div><div id="issuesList" class="stack-list"></div></div></section>
+<section class="card"><div class="section-title"><h2>Ошибки и журнал синхронизаций</h2><div class="small-muted">Последние системные действия по организациям и интеграциям</div></div><div class="table-wrap"><table class="table"><thead><tr><th>Когда</th><th>Организация</th><th>Действие</th><th>Тип</th><th>Кто</th></tr></thead><tbody id="activityRows"></tbody></table></div></section>
+</div></div><script src="assets/app.js?v=202"></script>
+<script>
+(async function(){
+ const s=requireSession(); if(!s) return; document.getElementById('who').textContent=`${s.user.full_name} · ${s.user.email}`; if(!isSuperAdmin(s)){ document.body.innerHTML='<div class="container"><div class="error">Эта страница доступна только главному администратору.</div></div>'; return; }
+ const esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); const fmt=v=>v?new Date(v).toLocaleString('ru-RU'):'—';
+ const [notifications, issues, activity] = await Promise.all([api('/api/v1/admin/notifications'), api('/api/v1/admin/issues'), api('/api/v1/admin/activity?limit=120')]);
+ document.getElementById('notifCount').textContent='Уведомлений: '+notifications.length; document.getElementById('issuesCount').textContent='Организаций с проблемами: '+issues.length;
+ document.getElementById('notifList').innerHTML = notifications.length ? notifications.map(n=>`<div class="issue ${n.level}"><strong>${esc(n.organization_name)} — ${esc(n.title)}</strong><div class="small-muted">${esc(n.message)}</div></div>`).join('') : '<div class="success">Важных уведомлений сейчас нет.</div>';
+ document.getElementById('issuesList').innerHTML = issues.length ? issues.map(item=>`<div class="card clean"><h3 style="margin-top:0">${esc(item.organization_name)}</h3>${item.issues.map(i=>`<div class="issue ${i.level}"><strong>${esc(i.title)}</strong><div class="small-muted">${esc(i.message)}</div></div>`).join('')}</div>`).join('') : '<div class="success">Проблемных клиентов сейчас нет.</div>';
+ document.getElementById('activityRows').innerHTML = activity.length ? activity.map(a=>`<tr><td>${esc(fmt(a.created_at))}</td><td>${esc(a.organization_name||'—')}</td><td>${esc(a.action||'—')}</td><td>${esc(a.entity_type||'—')}</td><td>${esc(a.actor_name||a.actor_email||'Система')}</td></tr>`).join('') : '<tr><td colspan="5">Журнал пуст.</td></tr>';
+ markPageReady();
+})();
+</script>
+<script>
+(function(){try{var raw=localStorage.getItem('shtab_session_v1');if(!raw)return;var s=JSON.parse(raw);if(s&&s.user&&String(s.user.email||'').toLowerCase()==='s.zarnitsyn@yandex.ru'){var el=document.getElementById('superAdminLink');if(el) el.style.display='';}}catch(e){}})();
+</script>
+</body></html>

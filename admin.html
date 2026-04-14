@@ -1,0 +1,169 @@
+<!doctype html><html lang="ru"><head><style>
+html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0;background:linear-gradient(180deg,#fafcff 0%, #f5f7fb 48%, #eef2f8 100%)}html[data-theme='dark'] body{background:linear-gradient(180deg,#0a0f1c 0%, #0b1120 42%, #0d1526 100%)!important;color:#e5edf8}body.page-loading .container{opacity:0;visibility:hidden}body.page-ready .container{opacity:1;visibility:visible}body.page-loading *{transition:none!important;animation:none!important}
+.admin-layout{display:grid;grid-template-columns:420px 1fr;gap:16px;align-items:start}.admin-scroll{max-height:70vh;overflow:auto}.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.kpi{padding:14px;border:1px solid var(--border);border-radius:16px;background:var(--panel)}.kpi .v{font-size:24px;font-weight:700}.filters{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px}.org-item{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--panel)}.org-item.active{outline:2px solid var(--primary);border-color:var(--primary-soft)}.org-meta{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.chip-row{display:flex;flex-wrap:wrap;gap:8px}.issue{border-left:3px solid #f59e0b;padding:10px 12px;background:rgba(245,158,11,.08);border-radius:10px}.issue.critical{border-left-color:#ef4444;background:rgba(239,68,68,.08)}.issue.info{border-left-color:#60a5fa;background:rgba(96,165,250,.08)}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tabs button.active{background:var(--primary);color:#fff;border-color:var(--primary)}.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:12px}.detail-box{border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--panel)}.list-simple{display:flex;flex-direction:column;gap:10px}.toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center}.muted{color:var(--muted)} .pill{display:inline-flex;padding:5px 9px;border-radius:999px;border:1px solid var(--border);font-size:12px}.pill.green{background:rgba(34,197,94,.12);color:#15803d}.pill.red{background:rgba(239,68,68,.12);color:#b91c1c}.pill.amber{background:rgba(245,158,11,.12);color:#b45309}.pill.blue{background:rgba(59,130,246,.12);color:#1d4ed8}.bulk-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wide-grid{display:grid;grid-template-columns:1.35fr .95fr;gap:16px}.tag{display:inline-block;padding:4px 8px;border-radius:999px;background:var(--soft);font-size:12px}.mini-table{width:100%;border-collapse:collapse}.mini-table td,.mini-table th{padding:8px;border-bottom:1px solid var(--border);text-align:left;font-size:13px}.sticky-top{position:sticky;top:0;z-index:2;background:inherit}
+@media (max-width: 1100px){.admin-layout,.wide-grid,.detail-grid,.two-col,.kpi-grid,.filters{grid-template-columns:1fr}.admin-scroll{max-height:none}}
+</style><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>ШТАБ — главная админка</title><link rel="stylesheet" href="assets/styles.css?v=202" /><script>(function(){try{var t=localStorage.getItem('shtab_theme_v1')||'light';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang','ru');}catch(e){}})();</script></head><body class="page-loading"><div class="container">
+<div class="topbar">
+  <div class="brand"><div class="brand-text"><strong>ШТАБ</strong><span id="who">Главная админка</span></div></div>
+  <div class="nav"><a href="admin.html#dashboard">Сводка</a><a href="clients.html">Клиенты и подписки</a><a href="support.html">Центр поддержки</a><a href="admin.html#tariffs">Тарифы</a><a href="#" onclick="clearSession();return false;">Выйти</a></div>
+</div>
+<div class="page-shell">
+  <div class="card clean"><div class="page-head"><div><h1 style="margin-top:12px">Центр управления клиентами</h1><p>Здесь ты управляешь доступом, подписками, статусами, клиентской CRM, поддержкой, тарифами, уведомлениями и общим здоровьем сервиса.</p></div></div></div>
+  <div id="adminError"></div>
+  <section id="dashboard" class="card" style="margin-top:16px">
+    <div class="toolbar"><div><h2 style="margin:0">Панель здоровья сервиса</h2><p class="small">Краткая картина по доступам, деньгам, интеграциям и ошибкам.</p></div><button class="btn secondary" id="refreshAll">Обновить всё</button></div>
+    <div class="kpi-grid" id="kpis" style="margin-top:14px"></div>
+  </section>
+
+  <div class="wide-grid" style="margin-top:16px">
+    <section id="clients" class="card">
+      <div class="toolbar sticky-top"><div><h2 style="margin:0">Клиенты и подписки</h2><p class="small">Фильтруй, ищи, выделяй и массово меняй статусы.</p></div></div>
+      <div class="filters" style="margin-top:12px">
+        <input id="q" placeholder="Поиск по организации, email, заметке" />
+        <select id="statusFilter"><option value="all">Все статусы</option><option value="pending">Ожидает доступа</option><option value="trial">Пробный</option><option value="active">Активные</option><option value="expired">Истёкшие</option><option value="blocked">Заблокированные</option><option value="vip">VIP</option><option value="frozen">Замороженные</option></select>
+        <select id="stageFilter"><option value="all">Все стадии</option><option value="new">Новый</option><option value="contacted">Связались</option><option value="demo">Демо</option><option value="negotiation">Переговоры</option><option value="paid">Оплатил</option><option value="churned">Отказался</option></select>
+        <select id="sourceFilter"><option value="all">Все источники</option><option value="telegram">Telegram</option><option value="vk">ВКонтакте</option><option value="chat">Чат</option><option value="referral">Рекомендация</option><option value="other">Другое</option></select>
+        <label class="small filter-toggle compact"><input id="problemOnly" type="checkbox"> Только с проблемами</label>
+      </div>
+      <div class="bulk-row" style="margin-top:10px">
+        <button class="btn secondary" data-bulk="extend30">+30 дней</button>
+        <button class="btn secondary" data-bulk="extend90">+90 дней</button>
+        <button class="btn secondary" data-bulk="extend365">+365 дней</button>
+        <button class="btn secondary" data-bulk="trial">Триал</button>
+        <button class="btn secondary" data-bulk="block">Блок</button>
+        <span class="small muted" id="selectionInfo">Выбрано: 0</span>
+      </div>
+      <div id="orgList" class="list-simple admin-scroll" style="margin-top:12px"></div>
+    </section>
+
+    <section class="card">
+      <div class="toolbar"><div><h2 style="margin:0">Карточка клиента</h2><p class="small">Полная информация по организации, доступу, данным и активности.</p></div><button id="impersonateBtn" class="btn secondary">Войти как клиент</button></div>
+      <div id="orgCard" class="stack" style="margin-top:12px"><div class="notice">Выбери организацию слева.</div></div>
+    </section>
+  </div>
+
+  <div class="two-col" style="margin-top:16px">
+    <section id="notifications" class="card"><div class="toolbar"><div><h2 style="margin:0">Уведомления</h2><p class="small">Истекающие тарифы, токены, ошибки синхронизации и неактивные клиенты.</p></div></div><div id="notificationsList" class="list-simple" style="margin-top:12px"></div></section>
+    <section class="card"><div class="toolbar"><div><h2 style="margin:0">Проблемы поддержки</h2><p class="small">Клиенты, где сейчас есть технический или бизнес-риск.</p></div></div><div id="issuesList" class="list-simple" style="margin-top:12px"></div></section>
+  </div>
+
+  <div class="two-col" style="margin-top:16px">
+    <section id="activity" class="card"><div class="toolbar"><div><h2 style="margin:0">История действий</h2><p class="small">Системный лог по организациям, оплатам, доступам и синхронизациям.</p></div></div><div id="activityList" class="list-simple admin-scroll" style="margin-top:12px"></div></section>
+    <section id="tariffs" class="card"><div class="toolbar"><div><h2 style="margin:0">Тарифы и лимиты</h2><p class="small">Управляй тарифными пресетами и ограничениями продукта.</p></div></div>
+      <div class="detail-grid" style="margin-top:12px">
+        <div class="detail-box stack">
+          <label>Код тарифа</label><input id="tariffCode" placeholder="custom_pro" />
+          <label>Название</label><input id="tariffLabel" placeholder="Custom Pro" />
+          <div class="grid grid-2"><div><label>Цена в месяц</label><input id="tariffPrice" type="number" value="0" /></div><div><label>Пользователи</label><input id="tariffUsers" type="number" value="2" /></div></div>
+          <div><label>Лимит SKU</label><input id="tariffSku" type="number" value="500" /></div>
+          <button class="btn primary" id="saveTariff">Сохранить тариф</button>
+          <div id="tariffMsg"></div>
+        </div>
+        <div class="detail-box"><div class="section-title"><h3>Список тарифов</h3></div><div id="tariffList" class="list-simple"></div></div>
+      </div>
+    </section>
+  </div>
+</div></div>
+<script src="assets/app.js?v=202"></script>
+<script>
+(async function(){
+  const s=requireSession(); if(!s) return;
+  document.getElementById('who').textContent=`${s.user.full_name} · ${s.user.email}`;
+  if(!isSuperAdmin(s)){ document.getElementById('adminError').innerHTML='<div class="error">Эта админка доступна только главному администратору.</div>'; markPageReady(); return; }
+
+  const state={orgs:[], selected:null, selectedIds:new Set(), dashboard:null, tariffs:[], notifications:[], issues:[], activity:[]};
+  const els={
+    kpis:document.getElementById('kpis'), orgList:document.getElementById('orgList'), orgCard:document.getElementById('orgCard'),
+    notificationsList:document.getElementById('notificationsList'), issuesList:document.getElementById('issuesList'), activityList:document.getElementById('activityList'),
+    tariffList:document.getElementById('tariffList'), selectionInfo:document.getElementById('selectionInfo')
+  };
+
+  const q=document.getElementById('q'), statusFilter=document.getElementById('statusFilter'), stageFilter=document.getElementById('stageFilter'), sourceFilter=document.getElementById('sourceFilter'), problemOnly=document.getElementById('problemOnly');
+
+  function money(v){ return typeof v==='number' ? v.toLocaleString('ru-RU',{style:'currency',currency:'RUB',maximumFractionDigits:0}) : '—'; }
+  function daysText(v){ return Number.isInteger(v) ? `${v} дн.` : '—'; }
+  function pillClass(state){ return state==='active'||state==='vip'?'green':state==='trial'?'blue':state==='blocked'||state==='expired'?'red':'amber'; }
+  function escapeHtml(v){ return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+  const STATE_LABELS={pending:'Ожидает доступа',trial:'Пробный',active:'Активный',expired:'Истёк',blocked:'Заблокирован',vip:'VIP',frozen:'Заморожен'};
+  const STAGE_LABELS={new:'Новый',contacted:'Связались',demo:'Демо',negotiation:'Переговоры',paid:'Оплатил',churned:'Отказался'};
+  const SOURCE_LABELS={telegram:'Telegram',vk:'ВКонтакте',chat:'Чат',referral:'Рекомендация',other:'Другое'};
+  const MP_STATUS_LABELS={connected:'Подключено',disconnected:'Не подключено',error:'Ошибка',ok:'Работает',pending:'Ожидает'};
+  function stateLabel(v){ return STATE_LABELS[v]||v||'—'; }
+  function stageLabel(v){ return STAGE_LABELS[v]||v||'—'; }
+  function sourceLabel(v){ return SOURCE_LABELS[v]||v||'—'; }
+  function mpStatusLabel(v){ return MP_STATUS_LABELS[v]||v||'—'; }
+
+  async function loadDashboard(){ state.dashboard = await api('/api/v1/admin/dashboard'); }
+  async function loadOrgs(){ const params=new URLSearchParams({q:q.value||'',status:statusFilter.value,stage:stageFilter.value,source:sourceFilter.value,problem_only:problemOnly.checked?'1':'0'}); state.orgs = await api('/api/v1/admin/organizations?'+params.toString()); if(state.selected){ state.selected = state.orgs.find(x=>x.id===state.selected.id) || null; } }
+  async function loadNotifications(){ state.notifications = await api('/api/v1/admin/notifications'); }
+  async function loadIssues(){ state.issues = await api('/api/v1/admin/issues'); }
+  async function loadActivity(){ state.activity = await api('/api/v1/admin/activity?limit=80'); }
+  async function loadTariffs(){ state.tariffs = await api('/api/v1/admin/tariffs'); }
+  async function loadOrgCard(id){ state.selected = await api(`/api/v1/admin/organizations/${id}`); renderOrgCard(); }
+
+  function renderDashboard(){ const d=state.dashboard||{}; const items=[['Организации',d.organization_count],['Активные',d.active_count],['Пробные',d.trial_count],['Скоро закончатся',d.soon_expiring_count],['Ожидаемый MRR',money(d.expected_mrr)],['Получено за 30 дн.',money(d.received_30d)],['Подключений WB/Ozon',d.connected_marketplaces],['Ошибки синхронизаций',d.sync_error_count]]; els.kpis.innerHTML=items.map(([t,v])=>`<div class="kpi"><div class="small muted">${t}</div><div class="v">${v??0}</div></div>`).join(''); }
+
+  function renderOrgs(){ els.orgList.innerHTML=''; if(!state.orgs.length){ els.orgList.innerHTML='<div class="notice">Организации не найдены по текущим фильтрам.</div>'; return; } state.orgs.forEach(org=>{ const selected=state.selectedIds.has(org.id); const active=state.selected&&state.selected.id===org.id?'active':''; const div=document.createElement('div'); div.className=`org-item ${active} ${selected?'selected':''}`; div.innerHTML=`<div class="org-meta"><div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><strong>${escapeHtml(org.name)}</strong><span class="select-link" data-select>${selected?'Снять':'Выбрать'}</span></div><div class="small muted">${escapeHtml(org.owner_email||'—')} · ${escapeHtml(org.tariff_label||org.tariff_code||'—')}</div></div><span class="pill ${pillClass(org.effective_state)}">${escapeHtml(org.effective_state_label||org.effective_state)}</span></div><div class="chip-row" style="margin-top:10px"><span class="tag">SKU: ${org.product_count}</span><span class="tag">Пользователи: ${org.member_count}</span><span class="tag">Стадия: ${escapeHtml(stageLabel(org.stage||'new'))}</span>${org.issues_count?`<span class="tag">Проблемы: ${org.issues_count}</span>`:''}</div><div class="small muted" style="margin-top:8px">${escapeHtml(org.billing_notice||'Без уведомлений')}</div>`; div.onclick=(e)=>{ if(e.target.closest('[data-select]')) return; loadOrgCard(org.id); }; div.querySelector('[data-select]').onclick=(e)=>{ e.stopPropagation(); if(state.selectedIds.has(org.id)) state.selectedIds.delete(org.id); else state.selectedIds.add(org.id); renderOrgs(); }; els.orgList.appendChild(div); }); renderSelectionInfo(); }
+  function renderSelectionInfo(){ els.selectionInfo.textContent=`Выбрано: ${state.selectedIds.size}`; }
+
+  function renderIssues(){ els.issuesList.innerHTML=''; if(!state.issues.length){ els.issuesList.innerHTML='<div class="success">Сейчас явных проблем поддержки нет.</div>'; return; } state.issues.forEach(item=>{ const all=item.issues.map(issue=>`<div class="issue ${issue.level}"><strong>${escapeHtml(issue.title)}</strong><div class="small">${escapeHtml(issue.message)}</div></div>`).join(''); const box=document.createElement('div'); box.className='detail-box'; box.innerHTML=`<div class="item-top"><div><h3>${escapeHtml(item.organization_name)}</h3><p class="small">Организация #${item.organization_id}</p></div><button class="btn secondary">Открыть</button></div><div class="list-simple" style="margin-top:10px">${all}</div>`; box.querySelector('button').onclick=()=>loadOrgCard(item.organization_id); els.issuesList.appendChild(box); }); }
+
+  function renderNotifications(){ els.notificationsList.innerHTML=''; if(!state.notifications.length){ els.notificationsList.innerHTML='<div class="success">Важных уведомлений сейчас нет.</div>'; return; } state.notifications.forEach(n=>{ const div=document.createElement('div'); div.className=`issue ${n.level}`; div.innerHTML=`<strong>${escapeHtml(n.organization_name)} — ${escapeHtml(n.title)}</strong><div class="small">${escapeHtml(n.message)}</div>`; div.onclick=()=>loadOrgCard(n.organization_id); els.notificationsList.appendChild(div); }); }
+
+  function renderActivity(){ els.activityList.innerHTML=''; if(!state.activity.length){ els.activityList.innerHTML='<div class="notice">Журнал пока пуст.</div>'; return; } state.activity.forEach(item=>{ const div=document.createElement('div'); div.className='detail-box'; const cleanAction = String(item.action||'—').split(' · ')[0]; div.innerHTML=`<div class="item-top"><div><h3>${escapeHtml(cleanAction)}</h3><p class="small">${fmtDate(item.created_at)} · ${escapeHtml(item.organization_name||'—')}</p></div><span class="tag">${escapeHtml(item.entity_type||'')}</span></div><div class="small muted">${escapeHtml((item.actor_name||item.actor_email||'Система'))}</div>`; els.activityList.appendChild(div); }); }
+
+  function renderTariffs(){ els.tariffList.innerHTML=''; state.tariffs.forEach(t=>{ const div=document.createElement('div'); div.className='detail-box'; div.innerHTML=`<div class="item-top"><div><h3>${escapeHtml(t.label)}</h3><p class="small">${escapeHtml(t.code)} · ${money(t.price_month)}</p></div><span class="pill ${t.is_active?'green':'amber'}">${t.is_active?'Активен':'Выключен'}</span></div><div class="small muted">Пользователи: ${t.max_users} · SKU: ${t.max_sku}</div>`; div.onclick=()=>{ document.getElementById('tariffCode').value=t.code; document.getElementById('tariffLabel').value=t.label; document.getElementById('tariffPrice').value=t.price_month||0; document.getElementById('tariffUsers').value=t.max_users||2; document.getElementById('tariffSku').value=t.max_sku||500; }; els.tariffList.appendChild(div); }); }
+
+  function renderOrgCard(){ const org=state.selected; if(!org){ els.orgCard.innerHTML='<div class="notice">Выбери организацию слева.</div>'; return; } const issues=(org.issues||[]).map(issue=>`<div class="issue ${issue.level}"><strong>${escapeHtml(issue.title)}</strong><div class="small">${escapeHtml(issue.message)}</div></div>`).join('')||'<div class="success">Проблем не найдено.</div>'; const connections=(org.connections||[]).map(c=>`<tr><td>${escapeHtml((c.marketplace||'').toUpperCase())}</td><td>${escapeHtml(mpStatusLabel(c.status||'—'))}</td><td>${escapeHtml(c.last_success_at||'—')}</td><td>${escapeHtml(c.sync_notice||c.last_error||'—')}</td></tr>`).join('')||'<tr><td colspan="4">Нет подключений</td></tr>'; const team=(org.team||[]).map(u=>`<tr><td>${escapeHtml(u.full_name||'—')}</td><td>${escapeHtml(u.email||'—')}</td><td>${escapeHtml(u.role||'—')}</td><td>${escapeHtml(u.status||'—')}</td></tr>`).join('')||'<tr><td colspan="4">Команда пуста</td></tr>'; const logs=(org.recent_logs||[]).slice(0,6).map(l=>`<tr><td>${escapeHtml(l.action||'—')}</td><td>${escapeHtml(l.entity_type||'—')}</td><td>${fmtDate(l.created_at)}</td></tr>`).join('');
+    els.orgCard.innerHTML=`
+      <div class="detail-grid">
+        <div class="detail-box"><div class="section-title"><h3>${escapeHtml(org.name)}</h3></div><p class="small">Владелец: ${escapeHtml(org.owner_name||'—')} · ${escapeHtml(org.owner_email||'—')}</p><div class="chip-row"><span class="pill ${pillClass(org.effective_state)}">${escapeHtml(org.effective_state_label)}</span><span class="tag">${escapeHtml(org.tariff_label||org.tariff_code||'—')}</span><span class="tag">SKU: ${org.product_count}</span><span class="tag">Пользователи: ${org.member_count}</span></div><p class="small muted" style="margin-top:10px">Последний вход владельца: ${org.owner_last_login?fmtDate(org.owner_last_login):'—'}</p><p class="small muted">Последний импорт: ${org.last_import_at?fmtDate(org.last_import_at):'—'} · Последняя оплата: ${org.last_payment_at?fmtDate(org.last_payment_at):'—'}</p></div>
+        <div class="detail-box stack">
+          <label>Источник</label><select id="metaSource"><option value="">—</option><option value="telegram">Telegram</option><option value="vk">ВКонтакте</option><option value="chat">Чат</option><option value="referral">Рекомендация</option><option value="other">Другое</option></select>
+          <label>Стадия</label><select id="metaStage"><option value="new">Новый</option><option value="contacted">Связались</option><option value="demo">Демо</option><option value="negotiation">Переговоры</option><option value="paid">Оплатил</option><option value="churned">Отказался</option></select>
+          <label>Теги</label><input id="metaTags" placeholder="например: приоритетный, WB, тёплый" />
+          <label>Внутренний статус</label><input id="metaInternal" placeholder="например: нужна помощь / апселл" />
+          <label>Заметка</label><textarea id="metaNote" rows="4"></textarea>
+          <button class="btn secondary" id="saveMeta">Сохранить CRM</button><div id="metaMsg"></div>
+        </div>
+      </div>
+      <div class="detail-grid" style="margin-top:12px">
+        <div class="detail-box stack">
+          <div class="section-title"><h3>Управление доступом</h3></div>
+          <div class="grid grid-2"><div><label>Статус доступа</label><select id="accessState"><option value="pending">Ожидает доступа</option><option value="trial">Пробный</option><option value="active">Активный</option><option value="expired">Истёк</option><option value="blocked">Заблокирован</option><option value="vip">VIP</option><option value="frozen">Заморожен</option></select></div><div><label>Тариф</label><select id="accessTariff"></select></div></div>
+          <div class="grid grid-2"><div><label>Срок (дней)</label><input id="accessDays" type="number" value="30" min="1" max="3650"></div><div><label>Цена / месяц</label><input id="accessPrice" type="number" value="0"></div></div>
+          <div class="grid grid-2"><div><label>Лимит пользователей</label><input id="accessUsers" type="number" value="${org.max_users||2}"></div><div><label>Лимит SKU</label><input id="accessSku" type="number" value="${org.max_sku||500}"></div></div>
+          <div><label>Кастомное имя тарифа</label><input id="accessLabel" placeholder="Например: White Label Pro"></div>
+          <div><label>Причина блокировки</label><input id="blockedReason" placeholder="Опционально"></div>
+          <div class="chip-row"><button class="btn secondary quick-access" data-days="30">+30</button><button class="btn secondary quick-access" data-days="90">+90</button><button class="btn secondary quick-access" data-days="365">+365</button><button class="btn secondary quick-state" data-state="trial">Триал</button><button class="btn secondary quick-state" data-state="vip">VIP</button><button class="btn secondary quick-state" data-state="frozen">Заморозить</button><button class="btn secondary quick-state" data-state="blocked">Заблокировать</button></div>
+          <button class="btn primary" id="saveAccess">Применить статус</button><div id="accessMsg"></div>
+        </div>
+        <div class="detail-box"><div class="section-title"><h3>Проблемы и уведомления</h3></div><div class="list-simple">${issues}</div></div>
+      </div>
+      <div class="detail-grid" style="margin-top:12px">
+        <div class="detail-box"><div class="section-title"><h3>Интеграции</h3></div><table class="mini-table"><thead><tr><th>MP</th><th>Статус</th><th>Последний успех</th><th>Комментарий</th></tr></thead><tbody>${connections}</tbody></table></div>
+        <div class="detail-box"><div class="section-title"><h3>Команда</h3></div><table class="mini-table"><thead><tr><th>Имя</th><th>Email</th><th>Роль</th><th>Статус</th></tr></thead><tbody>${team}</tbody></table></div>
+      </div>
+      <div class="detail-grid" style="margin-top:12px">
+        <div class="detail-box"><div class="section-title"><h3>Последние платежи</h3></div><table class="mini-table"><thead><tr><th>Тариф</th><th>Срок</th><th>До</th></tr></thead><tbody>${(org.recent_payments||[]).slice(0,6).map(p=>`<tr><td>${escapeHtml(p.tariff_label||p.tariff_code||'—')}</td><td>${p.period_days||0} дн.</td><td>${escapeHtml(p.paid_until||'—')}</td></tr>`).join('')||'<tr><td colspan="3">Нет данных</td></tr>'}</tbody></table></div>
+        <div class="detail-box"><div class="section-title"><h3>Последние действия</h3></div><table class="mini-table"><thead><tr><th>Действие</th><th>Тип</th><th>Когда</th></tr></thead><tbody>${logs||'<tr><td colspan="3">Нет данных</td></tr>'}</tbody></table></div>
+      </div>`;
+      document.getElementById('metaSource').value=org.source||''; document.getElementById('metaStage').value=org.stage||'new'; document.getElementById('metaTags').value=org.tags||''; document.getElementById('metaInternal').value=org.internal_status||''; document.getElementById('metaNote').value=org.note||'';
+      const tariffSelect=document.getElementById('accessTariff'); tariffSelect.innerHTML=state.tariffs.filter(t=>t.is_active!==0).map(t=>`<option value="${escapeHtml(t.code)}">${escapeHtml(t.label)}</option>`).join(''); tariffSelect.value=org.tariff_code||'starter'; document.getElementById('accessState').value=org.effective_state||'pending'; document.getElementById('accessPrice').value=org.custom_price_month||0; document.getElementById('accessLabel').value=org.custom_tariff_label||'';
+      document.getElementById('saveMeta').onclick=saveMeta; document.getElementById('saveAccess').onclick=saveAccess; document.querySelectorAll('.quick-access').forEach(b=>b.onclick=()=>{ document.getElementById('accessDays').value=b.dataset.days; document.getElementById('accessState').value='active'; }); document.querySelectorAll('.quick-state').forEach(b=>b.onclick=()=>{ document.getElementById('accessState').value=b.dataset.state; });
+  }
+
+  async function saveMeta(){ try{ const payload={source:document.getElementById('metaSource').value,stage:document.getElementById('metaStage').value,note:document.getElementById('metaNote').value,tags:document.getElementById('metaTags').value,internal_status:document.getElementById('metaInternal').value}; await api(`/api/v1/admin/organizations/${state.selected.id}/meta`,{method:'PUT',body:JSON.stringify(payload)}); document.getElementById('metaMsg').innerHTML='<div class="success">CRM сохранена.</div>'; await refreshAll(true);}catch(err){ document.getElementById('metaMsg').innerHTML=`<div class="error">${err.message}</div>`; } }
+  async function saveAccess(){ try{ const payload={access_state:document.getElementById('accessState').value, period_days:Number(document.getElementById('accessDays').value||30), tariff_code:document.getElementById('accessTariff').value, custom_tariff_label:document.getElementById('accessLabel').value, price_month:Number(document.getElementById('accessPrice').value||0), max_users:Number(document.getElementById('accessUsers').value||2), max_sku:Number(document.getElementById('accessSku').value||500), blocked_reason:document.getElementById('blockedReason').value}; await api(`/api/v1/admin/organizations/${state.selected.id}/access`,{method:'POST',body:JSON.stringify(payload)}); document.getElementById('accessMsg').innerHTML='<div class="success">Статус доступа обновлён.</div>'; await refreshAll(true);}catch(err){ document.getElementById('accessMsg').innerHTML=`<div class="error">${err.message}</div>`; } }
+
+  async function refreshAll(keepSelection=false){ await Promise.all([loadDashboard(), loadOrgs(), loadNotifications(), loadIssues(), loadActivity(), loadTariffs()]); renderDashboard(); renderOrgs(); renderNotifications(); renderIssues(); renderActivity(); renderTariffs(); if(keepSelection && state.selected){ await loadOrgCard(state.selected.id); } else { renderOrgCard(); } }
+
+  document.getElementById('refreshAll').onclick=()=>refreshAll(!!state.selected);
+  [q,statusFilter,stageFilter,sourceFilter,problemOnly].forEach(el=>el.oninput=()=>refreshAll(false));
+  document.querySelectorAll('[data-bulk]').forEach(btn=>btn.onclick=async()=>{ if(!state.selectedIds.size){ alert('Сначала отметь организации.'); return; } try{ await api('/api/v1/admin/bulk-action',{method:'POST',body:JSON.stringify({org_ids:[...state.selectedIds],action:btn.dataset.bulk,tariff_code:'starter',period_days:14})}); await refreshAll(true); }catch(err){ alert(err.message); } });
+  document.getElementById('saveTariff').onclick=async()=>{ try{ const payload={code:document.getElementById('tariffCode').value,label:document.getElementById('tariffLabel').value,price_month:Number(document.getElementById('tariffPrice').value||0),max_users:Number(document.getElementById('tariffUsers').value||2),max_sku:Number(document.getElementById('tariffSku').value||500),features:{},is_active:true}; state.tariffs = await api('/api/v1/admin/tariffs',{method:'POST',body:JSON.stringify(payload)}); document.getElementById('tariffMsg').innerHTML='<div class="success">Тариф сохранён.</div>'; renderTariffs(); if(state.selected) renderOrgCard(); }catch(err){ document.getElementById('tariffMsg').innerHTML=`<div class="error">${err.message}</div>`; } };
+  document.getElementById('impersonateBtn').onclick=async()=>{ if(!state.selected){ return; } try{ const data=await api(`/api/v1/admin/impersonate/${state.selected.id}`,{method:'POST'}); localStorage.setItem(SESSION_KEY, JSON.stringify({token:data.access_token, user:{id:data.user_id,email:'impersonated',full_name:'Имперсонация'}})); window.location='organizations.html'; }catch(err){ alert(err.message); } };
+
+  await refreshAll(false); markPageReady();
+})();
+</script></body></html>

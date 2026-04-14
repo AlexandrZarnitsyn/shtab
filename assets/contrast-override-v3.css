@@ -1,0 +1,14 @@
+
+:root{--text:#182235 !important;--muted:#5f6b7c !important}
+html{background:#f5f7fb !important}
+body{background:
+  radial-gradient(860px 360px at 0% 0%, rgba(99,102,241,.08), transparent 58%),
+  radial-gradient(820px 340px at 100% 0%, rgba(59,130,246,.07), transparent 54%),
+  linear-gradient(180deg,#fafcff 0%, #f5f7fb 48%, #eef2f8 100%) !important;
+}
+.container::before{display:none !important}
+.topbar,.card,.kpi,.item,.sidebar,.chart-box,.table-wrap,.muted-block,.mini-stat,.sidebar-meta,.auth-panel,.nav a,.btn,.sidebar-link,.tab,input,select,textarea{
+  color:var(--text) !important;
+}
+.btn.primary,.tab.active,.sidebar-link.active,
+.btn.primary *, .tab.active *, .sidebar-link.active *{color:#fff !important}

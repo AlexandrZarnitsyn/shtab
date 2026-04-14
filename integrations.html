@@ -1,0 +1,134 @@
+<!doctype html><html lang="ru"><head><style>
+html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0;background:radial-gradient(860px 360px at 0% 0%, rgba(99,102,241,.08), transparent 58%),radial-gradient(820px 340px at 100% 0%, rgba(59,130,246,.07), transparent 54%),linear-gradient(180deg,#fafcff 0%, #f5f7fb 48%, #eef2f8 100%)}html[data-theme='dark'] body{background:radial-gradient(900px 380px at 0% 0%, rgba(99,102,241,.16), transparent 58%),radial-gradient(880px 360px at 100% 0%, rgba(56,189,248,.10), transparent 54%),linear-gradient(180deg,#0a0f1c 0%, #0b1120 42%, #0d1526 100%)!important;color:#e5edf8}body.page-loading .container{opacity:0;visibility:hidden}body.page-ready .container{opacity:1;visibility:visible}body.page-loading *{transition:none!important;animation:none!important}</style><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>ШТАБ — интеграции WB и Ozon</title><link rel="stylesheet" href="assets/styles.css?v=101" /><script>(function(){try{var t=localStorage.getItem('shtab_theme_v1')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script></head><body class="page-loading"><div class="container">
+<div class="topbar">
+  <div class="brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.8-3.6 4.4-5.4 7-5.4s5.2 1.8 7 5.4"></path></svg></div><div class="brand-text"><strong>ШТАБ</strong><span id="who">Интеграции маркетплейсов</span></div></div>
+  <div class="nav"><a href="admin.html" id="superAdminLink" style="display:none">Админка</a><a href="organizations.html">Организации</a><a href="app.html">Панель</a><a href="settings.html">Настройки</a><a href="#" onclick="clearSession();return false;">Выйти</a></div>
+</div>
+<div class="page-shell">
+  <div class="card clean"><div class="page-head"><div><h1 style="margin-top:0">Подключение WB и Ozon</h1><p>Основной вариант — автоматическая синхронизация товаров из кабинета маркетплейса. CSV остаётся резервным способом: если API временно недоступен, можно обновить данные вручную в настройках организации.</p></div><div class="actions"><a class="btn secondary" href="settings.html">CSV как запасной вариант</a><button class="btn primary" id="syncAllBtn">Синхронизировать всё сейчас</button></div></div></div>
+  <div id="integrationsError"></div>
+  <div class="grid grid-2" style="margin-top:16px">
+    <div class="card" id="wbCard">
+      <div class="section-title"><h2>Wildberries</h2><span class="badge soft">WB</span></div>
+      <div class="stack">
+        <div class="notice" id="wbStatusBox">Статус загрузится после подключения.</div>
+        <div><label>WB API токен</label><input id="wbApiKey" placeholder="Вставь токен из кабинета WB" /></div>
+        <div class="grid grid-2"><div><label>Автосинхронизация</label><select id="wbAutoSync"><option value="1">Включена</option><option value="0">Выключена</option></select></div><div><label>Интервал, минут</label><input id="wbInterval" type="number" min="1" max="720" value="15" /></div></div>
+        <div id="wbNotice"></div>
+        <div class="actions"><button class="btn primary" id="wbSave">Подключить WB</button><button class="btn secondary" id="wbSync">Синхронизировать сейчас</button><button class="btn secondary" id="wbDisconnect">Отключить</button></div>
+      </div>
+    </div>
+    <div class="card" id="ozonCard">
+      <div class="section-title"><h2>Ozon</h2><span class="badge soft">OZON</span></div>
+      <div class="stack">
+        <div class="notice" id="ozonStatusBox">Статус загрузится после подключения.</div>
+        <div><label>Client ID</label><input id="ozonClientId" placeholder="Client ID из кабинета Ozon" /></div>
+        <div><label>API key</label><input id="ozonApiKey" placeholder="Вставь API key из кабинета Ozon" /></div>
+        <div class="grid grid-2"><div><label>Автосинхронизация</label><select id="ozonAutoSync"><option value="1">Включена</option><option value="0">Выключена</option></select></div><div><label>Интервал, минут</label><input id="ozonInterval" type="number" min="1" max="720" value="15" /></div></div>
+        <div class="small">Для Ozon используются Client ID и API key. При синхронизации каталог подтягивается автоматически, а CSV остаётся запасным вариантом.</div>
+        <div class="actions"><button class="btn primary" id="ozonSave">Подключить Ozon</button><button class="btn secondary" id="ozonSync">Синхронизировать сейчас</button><button class="btn secondary" id="ozonDisconnect">Отключить</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-top:16px">
+    <div class="card"><div class="section-title"><h2>Что уже работает</h2></div><div class="list"><div class="item"><h3>Автоподтягивание товаров</h3><p class="small">ШТАБ хранит подключение и может подтягивать каталог товаров без повторной загрузки CSV.</p></div><div class="item"><h3>Напоминание по WB-токену</h3><p class="small">За 30 дней до конца срока токена появится предупреждение. Срок жизни обычного WB-токена — 180 дней.</p></div><div class="item"><h3>CSV как запасной вариант</h3><p class="small">Даже при работе с API можно в любой момент заменить товарный набор через CSV на странице настроек.</p></div></div></div>
+    <div class="card"><div class="section-title"><h2>Последние синхронизации</h2></div><div id="syncLogs" class="list"></div></div>
+  </div>
+</div>
+</div><script src="assets/app.js?v=101"></script>
+<script>
+(async function(){
+  const s=requireSession(); if(!s) return;
+  if(isSuperAdmin(s)){ window.location='admin.html'; return; }
+  const who=document.getElementById('who'); if(who) who.textContent=`${s.user.full_name} · ${s.user.email}${s.org ? ' · ' + s.org.name : ''}`;
+  if(!s.org){ window.location='organizations.html'; return; }
+  if(!canRole('manage_org', s.org)){
+    document.getElementById('integrationsError').innerHTML='<div class="notice">У этой роли доступ к подключению маркетплейсов только для просмотра. Менять ключи может только руководитель.</div>';
+  }
+  const state = { wb: null, ozon: null };
+  const errBox = document.getElementById('integrationsError');
+  function statusHtml(conn, label){
+    if(!conn || conn.status !== 'connected') return `<strong>${label} не подключён.</strong><br>После подключения ШТАБ сможет подтягивать товары автоматически. CSV останется резервным вариантом.`;
+    return `<strong>${label} подключён.</strong><br>Последняя успешная синхронизация: <strong>${conn.last_success_at ? fmtDate(conn.last_success_at) : 'ещё не было'}</strong><br>Последний запуск: <strong>${conn.last_sync_at ? fmtDate(conn.last_sync_at) : 'ещё не было'}</strong>${conn.masked_api_key ? `<br>Ключ: <strong>${conn.masked_api_key}</strong>` : ''}${conn.token_expires_at ? `<br>Токен действует до: <strong>${conn.token_expires_at}</strong>` : ''}${conn.last_error ? `<br>Последняя ошибка: <strong>${conn.last_error}</strong>` : ''}`;
+  }
+  function paintStatus(id, conn, label){
+    const box=document.getElementById(id); if(!box) return;
+    box.className = conn && conn.status === 'connected' ? 'success' : 'notice';
+    box.innerHTML = statusHtml(conn, label);
+  }
+  function paintNotice(id, conn){
+    const box=document.getElementById(id); if(!box) return;
+    if(conn && conn.sync_notice){ box.innerHTML=`<div class="notice">${conn.sync_notice}</div>`; }
+    else box.innerHTML='';
+  }
+  function renderLogs(logs){
+    const holder=document.getElementById('syncLogs');
+    holder.innerHTML='';
+    if(!logs || !logs.length){ holder.innerHTML='<div class="item"><p class="small">Синхронизаций пока не было. После первого запуска здесь появится журнал.</p></div>'; return; }
+    logs.forEach(log=>{
+      const div=document.createElement('div');
+      div.className='item';
+      div.innerHTML=`<div class="item-top"><div><h3>${(log.marketplace||'').toUpperCase()} · ${log.status === 'success' ? 'успешно' : log.status === 'error' ? 'ошибка' : 'в работе'}</h3><p class="small">${fmtDate(log.started_at)}${log.finished_at ? ' → ' + fmtDate(log.finished_at) : ''}</p></div><span class="badge ${log.status === 'success' ? 'green' : log.status === 'error' ? 'red' : 'soft'}">+${log.added_count||0} / ~${log.updated_count||0}</span></div><p class="small">${log.message || 'Без подробностей'}</p>`;
+      holder.appendChild(div);
+    });
+  }
+  async function load(){
+    try{
+      const data = await api(`/api/v1/integrations?organization_id=${s.org.id}`);
+      state.wb = data.connections.find(x=>x.marketplace==='wb') || null;
+      state.ozon = data.connections.find(x=>x.marketplace==='ozon') || null;
+      paintStatus('wbStatusBox', state.wb, 'WB');
+      paintStatus('ozonStatusBox', state.ozon, 'Ozon');
+      paintNotice('wbNotice', state.wb);
+      renderLogs(data.logs || []);
+      if(state.wb){ document.getElementById('wbInterval').value = state.wb.sync_interval_minutes || 15; document.getElementById('wbAutoSync').value = state.wb.auto_sync_enabled ? '1' : '0'; }
+      if(state.ozon){ document.getElementById('ozonClientId').value = state.ozon.client_id || ''; document.getElementById('ozonInterval').value = state.ozon.sync_interval_minutes || 15; document.getElementById('ozonAutoSync').value = state.ozon.auto_sync_enabled ? '1' : '0'; }
+    }catch(err){ errBox.innerHTML=`<div class="error">${err.message}</div>`; }
+  }
+  async function saveConnection(mp){
+    const canEdit = canRole('manage_org', getSession().org); if(!canEdit) return;
+    const payload = mp === 'wb'
+      ? { api_key: document.getElementById('wbApiKey').value.trim(), auto_sync_enabled: document.getElementById('wbAutoSync').value === '1', sync_interval_minutes: Number(document.getElementById('wbInterval').value || 15) }
+      : { client_id: document.getElementById('ozonClientId').value.trim(), api_key: document.getElementById('ozonApiKey').value.trim(), auto_sync_enabled: document.getElementById('ozonAutoSync').value === '1', sync_interval_minutes: Number(document.getElementById('ozonInterval').value || 15) };
+    try{
+      await api(`/api/v1/integrations/${mp}/connect?organization_id=${s.org.id}`, {method:'POST', body: JSON.stringify(payload)});
+      errBox.innerHTML='<div class="success">Подключение сохранено. Теперь можно запускать синхронизацию и использовать автообновление.</div>';
+      if(mp==='wb') document.getElementById('wbApiKey').value='';
+      if(mp==='ozon') document.getElementById('ozonApiKey').value='';
+      await load();
+    }catch(err){ errBox.innerHTML=`<div class="error">${err.message}</div>`; }
+  }
+  async function syncConnection(mp){
+    try{
+      errBox.innerHTML='<div class="notice">Запускаю синхронизацию. Если маркетплейс отвечает долго, это может занять немного времени.</div>';
+      const result = await api(`/api/v1/integrations/${mp}/sync?organization_id=${s.org.id}`, {method:'POST'});
+      errBox.innerHTML=`<div class="success">${(result.marketplace||mp).toUpperCase()}: добавлено ${result.added_count||0}, обновлено ${result.updated_count||0}, всего получено ${result.fetched_count||0}.</div>`;
+      await load();
+    }catch(err){ errBox.innerHTML=`<div class="error">${err.message}</div>`; }
+  }
+  async function disconnectConnection(mp){
+    const canEdit = canRole('manage_org', getSession().org); if(!canEdit) return;
+    try{
+      await api(`/api/v1/integrations/${mp}/disconnect?organization_id=${s.org.id}`, {method:'POST'});
+      errBox.innerHTML='<div class="success">Подключение удалено. CSV-обновление остаётся доступным в настройках.</div>';
+      await load();
+    }catch(err){ errBox.innerHTML=`<div class="error">${err.message}</div>`; }
+  }
+  document.getElementById('wbSave').onclick=()=>saveConnection('wb');
+  document.getElementById('ozonSave').onclick=()=>saveConnection('ozon');
+  document.getElementById('wbSync').onclick=()=>syncConnection('wb');
+  document.getElementById('ozonSync').onclick=()=>syncConnection('ozon');
+  document.getElementById('wbDisconnect').onclick=()=>disconnectConnection('wb');
+  document.getElementById('ozonDisconnect').onclick=()=>disconnectConnection('ozon');
+  document.getElementById('syncAllBtn').onclick=async()=>{ await syncConnection('wb').catch(()=>{}); await syncConnection('ozon').catch(()=>{}); };
+  if(!canRole('manage_org', s.org)){
+    ['wbApiKey','wbAutoSync','wbInterval','ozonClientId','ozonApiKey','ozonAutoSync','ozonInterval'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled=true; });
+    ['wbSave','wbDisconnect','ozonSave','ozonDisconnect'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  }
+  await load();
+  markPageReady();
+})();
+</script><script>
+(function(){try{var raw=localStorage.getItem('shtab_session_v1');if(!raw)return;var s=JSON.parse(raw);if(s&&s.user&&String(s.user.email||'').toLowerCase()==='s.zarnitsyn@yandex.ru'){var el=document.getElementById('superAdminLink');if(el) el.style.display='';}}catch(e){}})();
+</script>
+</body></html>

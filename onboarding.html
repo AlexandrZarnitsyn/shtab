@@ -1,0 +1,57 @@
+<!doctype html><html lang="ru"><head><style>
+html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0;background:radial-gradient(860px 360px at 0% 0%, rgba(99,102,241,.08), transparent 58%),radial-gradient(820px 340px at 100% 0%, rgba(59,130,246,.07), transparent 54%),linear-gradient(180deg,#fafcff 0%, #f5f7fb 48%, #eef2f8 100%)}html[data-theme='dark'] body{background:radial-gradient(900px 380px at 0% 0%, rgba(99,102,241,.16), transparent 58%),radial-gradient(880px 360px at 100% 0%, rgba(56,189,248,.10), transparent 54%),linear-gradient(180deg,#0a0f1c 0%, #0b1120 42%, #0d1526 100%)!important;color:#e5edf8}body.page-loading .container{opacity:0;visibility:hidden}body.page-ready .container{opacity:1;visibility:visible}body.page-loading *{transition:none!important;animation:none!important}</style><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>ШТАБ — первый запуск</title><link rel="stylesheet" href="assets/styles.css?v=202" /><script>(function(){try{var t=localStorage.getItem('shtab_theme_v1')||'light';var l=localStorage.getItem('shtab_lang_v1')||'ru';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);}catch(e){}})();</script></head><body class="page-loading"><div class="container">
+<div class="topbar">
+  <div class="brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 19c1.8-3.6 4.4-5.4 7-5.4s5.2 1.8 7 5.4"></path></svg></div><div class="brand-text"><strong>ШТАБ</strong><span id="who">Корпоративная система управления</span></div></div>
+  <div class="nav"><a href="organizations.html">Организации</a><a href="app.html">Панель</a><a href="settings.html">Настройки</a><a href="#" onclick="clearSession();return false;">Выйти</a></div>
+</div>
+<div class="hero-split">
+  <div class="card clean">
+    
+    <h1 style="margin-top:12px">Создай компанию</h1>
+    <p>Укажи название рабочей области и выбери маркетплейс. CSV можно загрузить сразу, использовать демо-данные или добавить товары позже уже внутри организации.</p>
+    <div class="stack">
+      <div><label>Название компании</label><input id="orgName" placeholder="ООО Ромашка" /></div>
+      <div><label>Основной маркетплейс</label><select id="marketplace"><option>Ozon</option><option>WB</option><option>Яндекс Маркет</option></select></div>
+      <div class="actions"><button class="btn secondary" id="downloadTemplate">Скачать шаблон CSV</button><button class="btn secondary" id="useDemo">Использовать демо-данные</button><label class="btn primary">Загрузить CSV<input id="csv" type="file" accept=".csv,text/csv" style="display:none" /></label></div>
+      <button class="btn primary" id="finish">Создать организацию</button>
+      <div class="small" style="margin-top:8px;color:var(--muted,#6b7280)">CSV не обязателен. Можно создать пустую организацию и загрузить товары позже в настройках организации.</div><div id="msg"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title"><h2>Что будет после создания</h2></div>
+    <div class="list">
+      <div class="item"><h3>Список организаций</h3><p class="small">Новая рабочая область появится в общем списке и станет текущей в сессии.</p></div>
+      <div class="item"><h3>Пустая рабочая область</h3><p class="small">После создания откроется рабочая область без тарифа. Основные разделы появятся после выдачи доступа администратором.</p></div>
+      <div class="item"><h3>Панель и настройки</h3><p class="small">После выдачи доступа администратором можно перейти в панель, управлять CSV, смотреть историю импортов и приглашать пользователей.</p></div>
+    </div>
+  </div>
+</div>
+</div><script src="assets/app.js?v=202"></script>
+<script>
+requireSession();
+let preparedProducts = null;
+document.getElementById('downloadTemplate').onclick=()=>downloadTemplate();
+document.getElementById('useDemo').onclick=()=>{ preparedProducts = demoProducts; document.getElementById('msg').innerHTML='<div class="success">Выбраны демонстрационные товары.</div>'; };
+document.getElementById('csv').addEventListener('change', async (e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const text=await file.text(); const parsed=parseCSV(text);
+  if(parsed.errors.length){ document.getElementById('msg').innerHTML='<div class="error">'+parsed.errors.join('<br>')+'</div>'; return; }
+  preparedProducts = parsed.rows; document.getElementById('msg').innerHTML='<div class="success">CSV загружен. Строк: '+parsed.rows.length+'</div>';
+});
+document.getElementById('finish').onclick=async()=>{
+  const name=document.getElementById('orgName').value.trim();
+  const marketplace=document.getElementById('marketplace').value;
+  if(!name){ document.getElementById('msg').innerHTML='<div class="error">Введите название компании.</div>'; return; }
+  try{
+    const org = await api('/api/v1/organizations', {method:'POST', body: JSON.stringify({name, marketplace})});
+    const selectedRows = preparedProducts || null;
+    if(selectedRows && selectedRows.length){
+      const payload = selectedRows.map(toApiProduct);
+      await api(`/api/v1/products?organization_id=${org.id}`, {method:'POST', body: JSON.stringify(payload)});
+    }
+    setSession({...getSession(), org});
+    window.location='app.html';
+  }catch(err){ document.getElementById('msg').innerHTML=`<div class="error">${err.message}</div>`; }
+};
+</script>
+<script>markPageReady();</script></body></html>

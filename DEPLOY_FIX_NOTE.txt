@@ -1,0 +1,4 @@
+Исправления:
+1. assets/app.js — фронт использует Railway в проде и localhost локально.
+2. backend/app/main.py — исправлен CORS и ссылка invite.
+После загрузки в GitHub дождитесь автодеплоя Railway и Cloudflare.
