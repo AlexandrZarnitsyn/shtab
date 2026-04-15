@@ -147,8 +147,6 @@ def init_db():
     add_column_if_missing(conn, "organizations", "custom_price_month REAL DEFAULT 0")
     add_column_if_missing(conn, "organizations", "frozen_at TEXT DEFAULT ''")
     add_column_if_missing(conn, "organizations", "blocked_reason TEXT DEFAULT ''")
-    conn.execute("CREATE TABLE IF NOT EXISTS password_reset_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, token TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL, used INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL)")
-    add_column_if_missing(conn, "password_reset_tokens", "used_at TEXT DEFAULT ''")
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_memberships_org_user ON memberships(organization_id, user_id)")
@@ -163,9 +161,6 @@ def init_db():
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_marketplace_connections_org_marketplace ON marketplace_connections(organization_id, marketplace)")
 
     conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_tariff_presets_code ON tariff_presets(code)")
-    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS ux_password_reset_tokens_token ON password_reset_tokens(token)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON password_reset_tokens(expires_at)")
 
     conn.execute(
         "UPDATE sessions SET created_at = COALESCE(NULLIF(created_at, ''), ?), expires_at = COALESCE(NULLIF(expires_at, ''), ?) WHERE COALESCE(created_at, '') = '' OR COALESCE(expires_at, '') = ''",
@@ -219,37 +214,6 @@ def create_session(user_id: int) -> str:
     conn.commit()
     conn.close()
     return token
-
-
-def parse_iso_datetime(value: str) -> datetime:
-    raw = (value or "").strip()
-    if not raw:
-        raise ValueError("Empty datetime")
-    if raw.endswith("Z"):
-        raw = raw[:-1] + "+00:00"
-    dt = datetime.fromisoformat(raw)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
-def get_frontend_origin(request: Request) -> str:
-    configured = (os.environ.get("FRONTEND_ORIGIN") or "").strip().rstrip("/")
-    if configured:
-        return configured
-    origin = (request.headers.get("origin") or "").strip().rstrip("/")
-    if origin:
-        return origin
-    referer = (request.headers.get("referer") or "").strip()
-    if referer:
-        parsed = urlparse(referer)
-        if parsed.scheme and parsed.netloc:
-            return f"{parsed.scheme}://{parsed.netloc}"
-    return f"{request.base_url.scheme}://{request.base_url.netloc}".rstrip("/")
-
-
-def build_password_reset_link(request: Request, token: str) -> str:
-    return f"{get_frontend_origin(request)}/reset-password.html?token={token}"
 
 
 def get_bearer_token(authorization: Optional[str]) -> str:
@@ -838,15 +802,6 @@ class LoginIn(BaseModel):
     password: str
 
 
-class ForgotPasswordIn(BaseModel):
-    email: EmailStr
-
-
-class ResetPasswordIn(BaseModel):
-    token: str
-    new_password: str
-
-
 class OrganizationIn(BaseModel):
     name: str
     tariff: str = "none"
@@ -959,91 +914,6 @@ def list_tariffs():
             "kind": "custom",
         })
     return out
-
-
-@app.post("/api/v1/auth/forgot-password")
-def forgot_password(payload: ForgotPasswordIn, request: Request):
-    normalized_email = payload.email.lower().strip()
-    conn = db()
-    row = conn.execute("SELECT id FROM users WHERE email = ?", (normalized_email,)).fetchone()
-    if not row:
-        conn.close()
-        return {"success": True, "message": "Если аккаунт существует, ссылка создана."}
-
-    user_id = int(row["id"])
-    token = secrets.token_urlsafe(32)
-    created_at = iso_now()
-    expires_at = (now_utc() + timedelta(minutes=30)).replace(microsecond=0).isoformat()
-    conn.execute("DELETE FROM password_reset_tokens WHERE user_id = ? OR expires_at < ?", (user_id, iso_now()))
-    conn.execute(
-        "INSERT INTO password_reset_tokens(user_id, token, expires_at, used, created_at, used_at) VALUES(?, ?, ?, 0, ?, '')",
-        (user_id, token, expires_at, created_at)
-    )
-    conn.commit()
-    conn.close()
-    return {
-        "success": True,
-        "message": "Ссылка для сброса создана.",
-        "reset_link": build_password_reset_link(request, token),
-        "token": token,
-    }
-
-
-@app.get("/api/v1/auth/reset-password/validate")
-def validate_reset_password(token: str = Query(...)):
-    conn = db()
-    row = conn.execute(
-        "SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ? LIMIT 1",
-        (token.strip(),)
-    ).fetchone()
-    conn.close()
-    if not row:
-        raise HTTPException(status_code=400, detail="Недействительный токен")
-    if int(row["used"] or 0):
-        raise HTTPException(status_code=400, detail="Токен уже использован")
-    try:
-        expires_at = parse_iso_datetime(row["expires_at"])
-    except Exception:
-        raise HTTPException(status_code=400, detail="Некорректный токен")
-    if expires_at < now_utc():
-        raise HTTPException(status_code=400, detail="Срок действия токена истёк")
-    return {"success": True}
-
-
-@app.post("/api/v1/auth/reset-password")
-def reset_password(payload: ResetPasswordIn):
-    token = payload.token.strip()
-    new_password = payload.new_password.strip()
-    if len(new_password) < 6:
-        raise HTTPException(status_code=400, detail="Пароль должен быть не короче 6 символов")
-
-    conn = db()
-    row = conn.execute(
-        "SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ? LIMIT 1",
-        (token,)
-    ).fetchone()
-    if not row:
-        conn.close()
-        raise HTTPException(status_code=400, detail="Недействительный токен")
-    if int(row["used"] or 0):
-        conn.close()
-        raise HTTPException(status_code=400, detail="Токен уже использован")
-    try:
-        expires_at = parse_iso_datetime(row["expires_at"])
-    except Exception:
-        conn.close()
-        raise HTTPException(status_code=400, detail="Некорректный токен")
-    if expires_at < now_utc():
-        conn.close()
-        raise HTTPException(status_code=400, detail="Срок действия токена истёк")
-
-    user_id = int(row["user_id"])
-    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(new_password), user_id))
-    conn.execute("UPDATE password_reset_tokens SET used = 1, used_at = ? WHERE token = ?", (iso_now(), token))
-    conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
-    conn.commit()
-    conn.close()
-    return {"success": True, "message": "Пароль успешно изменён"}
 
 
 @app.post("/api/v1/auth/register")
