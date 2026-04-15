@@ -25,3 +25,13 @@ body{background:
 .badge.yellow { color: #f5c542 !important; }
 .badge.blue { color: #4caf50 !important; }
 
+
+
+/* REMOVE BORDERS AND BACKGROUNDS FROM STATUS LABELS */
+.badge, .status, .label {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
