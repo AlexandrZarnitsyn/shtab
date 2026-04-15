@@ -1,4 +1,24 @@
 
+function renderEmptyState(container, text, actionText, actionFn){
+  container.innerHTML = `
+    <div class="empty">
+      <p>${text}</p>
+      <button class="btn primary" onclick="${actionFn}">${actionText}</button>
+    </div>
+  `;
+}
+
+function recommendationText(p){
+  if(p.stockout_risk === 'high'){
+    return `👉 Срочно закажи ${p.reorder_qty} шт.`;
+  }
+  if(p.stockout_risk === 'medium'){
+    return `👉 Проверь закупку: ${p.reorder_qty} шт.`;
+  }
+  return `✅ Всё стабильно`;
+}
+
+
 const API_BASE =
   window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
     ? "http://127.0.0.1:8000"
@@ -156,8 +176,8 @@ const PARTIAL_TRANSLATIONS = {
     'Согласовать закупку ': 'Approve restock of ',
     ' шт.': ' pcs',
     'Проверить восстановление маржи': 'Review margin recovery',
-    'Покрытие ': 'Coverage ',
-    ' дн.': ' days',
+    'Хватит на ': 'Coverage ',
+    ' дней': ' days',
     ' при сроке поставки ': ' with lead time ',
     'Вклад в прибыль ': 'Profit contribution ',
     ' на единицу': ' per unit',
@@ -498,7 +518,9 @@ async function renderOrganizations(){
     orgs.forEach(org=>{
       const div=document.createElement('div'); div.className='item';
       const openLabel = org.billing_status === 'active' ? 'Открыть' : 'Рабочая область';
-      div.innerHTML=`<div class="item-top"><div><h3>${org.name}</h3><p class="small">Тариф: ${formatTariff(org.tariff_code)} · Роль: ${org.current_role || '—'} · Основной маркетплейс: ${org.marketplace||'—'}</p></div><span class="badge ${billingStatusClass(org)}">${billingStatusLabel(org)}</span></div><div class="actions">${billingNoticeHtml(org)}<button class="btn primary" data-open>${openLabel}</button><button class="btn secondary" data-settings>Настройки</button></div>`;
+      div.innerHTML=`<div class="item-top"><div><h3>${org.name}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">Тариф: ${formatTariff(org.tariff_code)} · Роль: ${org.current_role || '—'} · Основной маркетплейс: ${org.marketplace||'—'}</p></div><span class="badge ${billingStatusClass(org)}">${billingStatusLabel(org)}</span></div><div class="actions">${billingNoticeHtml(org)}<button class="btn primary" data-open>${openLabel}</button><button class="btn secondary" data-settings>Настройки</button></div>`;
       div.querySelector('[data-open]').onclick=()=>{setSession({...getSession(), org}); window.location = 'app.html';};
       div.querySelector('[data-settings]').onclick=()=>{setSession({...getSession(), org}); window.location='settings.html';};
       holder.appendChild(div);
@@ -606,11 +628,15 @@ function renderDiffPreview(diff){
   if(!diff){ holder.style.display='none'; holder.innerHTML=''; return; }
   holder.style.display='block';
   const topFields=Object.entries(diff.changed_fields||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  holder.innerHTML = `<div class="item"><div class="item-top"><div><h3>Сравнение с текущими данными</h3><p class="small">Перед заменой видно, что именно изменится в организации.</p></div><span class="badge soft">Предпросмотр</span></div><div class="mini-stat-row" style="margin-top:12px"><div class="mini-stat"><div class="small">Новых SKU</div><div style="font-weight:800;margin-top:8px">${diff.added_count||0}</div></div><div class="mini-stat"><div class="small">Обновится SKU</div><div style="font-weight:800;margin-top:8px">${diff.updated_count||0}</div></div><div class="mini-stat"><div class="small">Удалится SKU</div><div style="font-weight:800;margin-top:8px">${diff.removed_count||0}</div></div></div></div>`;
+  holder.innerHTML = `<div class="item"><div class="item-top"><div><h3>Сравнение с текущими данными</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">Перед заменой видно, что именно изменится в организации.</p></div><span class="badge soft">Предпросмотр</span></div><div class="mini-stat-row" style="margin-top:12px"><div class="mini-stat"><div class="small">Новых SKU</div><div style="font-weight:800;margin-top:8px">${diff.added_count||0}</div></div><div class="mini-stat"><div class="small">Обновится SKU</div><div style="font-weight:800;margin-top:8px">${diff.updated_count||0}</div></div><div class="mini-stat"><div class="small">Удалится SKU</div><div style="font-weight:800;margin-top:8px">${diff.removed_count||0}</div></div></div></div>`;
   if(topFields.length){
     const div=document.createElement('div');
     div.className='item';
-    div.innerHTML = `<h3>Чаще всего меняются поля</h3><p class="small">${topFields.map(([name,count])=>`${name}: ${count}`).join(' · ')}</p>`;
+    div.innerHTML = `<h3>Чаще всего меняются поля</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${topFields.map(([name,count])=>`${name}: ${count}`).join(' · ')} + `<p class="recommend">${recommendationText(p)}</p>`;
     holder.appendChild(div);
   }
 }
@@ -625,7 +651,9 @@ async function loadAuditLog(holderId, organizationId){
       const div=document.createElement('div');
       div.className='item';
       const actor = item.actor_name ? `${item.actor_name} · ${item.actor_email}` : (item.actor_email || 'Система');
-      div.innerHTML = `<div class="item-top"><div><h3>${item.action}</h3><p class="small">${fmtDate(item.created_at)} · ${actor}</p></div><span class="badge soft">${item.entity_type}</span></div>`;
+      div.innerHTML = `<div class="item-top"><div><h3>${item.action}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${fmtDate(item.created_at)} · ${actor}</p></div><span class="badge soft">${item.entity_type}</span></div>`;
       holder.appendChild(div);
     });
     if(!logs.length) holder.innerHTML='<div class="item"><p class="small">Журнал действий пока пуст.</p></div>';
@@ -708,7 +736,9 @@ async function renderDashboard(){
     products.filter(p=>p.stockout_risk!=='low' || (p.contribution_per_unit != null && p.contribution_per_unit < 140)).slice(0,8).forEach(p=>{
       const div=document.createElement('div');
       div.className='item';
-      div.innerHTML=`<div class="item-top"><div><h3>${p.stockout_risk!=='low' ? 'Согласовать закупку ' + p.reorder_qty + ' шт.' : 'Проверить восстановление маржи'}</h3><p class="small">${p.name} · ${p.account}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>${p.stockout_risk!=='low' ? 'Покрытие ' + Math.round(p.days_of_cover) + ' дн. при сроке поставки ' + p.lead_time_days + ' дн.' : 'Вклад в прибыль ' + hiddenMoney(p.contribution_per_unit) + ' на единицу'}</p>`;
+      div.innerHTML=`<div class="item-top"><div><h3>${p.stockout_risk!=='low' ? 'Согласовать закупку ' + p.reorder_qty + ' шт.' : 'Проверить восстановление маржи'}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${p.name} · ${p.account}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>${p.stockout_risk!=='low' ? 'Хватит на ' + Math.round(p.days_of_cover) + ' дней при сроке поставки ' + p.lead_time_days + ' дней' : 'Вклад в прибыль ' + hiddenMoney(p.contribution_per_unit) + ' на единицу'} + `<p class="recommend">${recommendationText(p)}</p>`;
       actions.appendChild(div);
     });
     if(!actions.children.length){
@@ -726,7 +756,7 @@ async function renderDashboard(){
       const expectedDate = p.expected_stockout_date || '—';
       const unitProfit = hiddenMoney(p.contribution_per_unit);
       const forecastProfit = hiddenMoney(p.forecast_profit_30d);
-      tr.innerHTML=`<td>${canSku ? `<a href="sku.html" data-sku-link>${p.sku}</a>` : p.sku}</td><td>${p.account}</td><td>${p.name}</td><td>${stock}</td><td>${avg.toFixed(1)}</td><td>${Math.round(cover)} дн.</td><td>${expectedDate}</td><td>${p.reorder_qty>0 ? p.reorder_qty + ' шт.' : '—'}</td><td>${unitProfit}</td><td>${forecastProfit}</td><td>${riskLabel(p.stockout_risk)}</td>`;
+      tr.innerHTML=`<td>${canSku ? `<a href="sku.html" data-sku-link>${p.sku}</a>` : p.sku}</td><td>${p.account}</td><td>${p.name}</td><td>${stock}</td><td>${avg.toFixed(1)}</td><td>${Math.round(cover)} дней</td><td>${expectedDate}</td><td>${p.reorder_qty>0 ? p.reorder_qty + ' шт.' : '—'}</td><td>${unitProfit}</td><td>${forecastProfit}</td><td>${riskLabel(p.stockout_risk)}</td>`;
       if(canSku){
         tr.querySelector('[data-sku-link]').onclick=(e)=>{ e.preventDefault(); setSelectedSku(p.sku); window.location='sku.html'; };
       }
@@ -739,7 +769,7 @@ async function renderDashboard(){
         const riskiest=[...products].sort((a,b)=>a.days_of_cover-b.days_of_cover)[0];
         const financeVisible = canRole('view_finance', s.org);
         const weakest = financeVisible ? [...products].filter(x=>x.contribution_per_unit != null).sort((a,b)=>a.contribution_per_unit-b.contribution_per_unit)[0] : null;
-        assistant.innerHTML=`Самый заметный риск сейчас — <strong>${riskiest.name}</strong>. Остатков хватит примерно на <strong>${Math.round(riskiest.days_of_cover)} дн.</strong>, а срок поставки — <strong>${riskiest.lead_time_days} дн.</strong>.${weakest ? `<br><br>Самая низкая прибыль по SKU сейчас у <strong>${weakest.name}</strong>: <strong>${money(weakest.contribution_per_unit)}</strong> на единицу.` : ''}<br><br>${financeVisible ? `Средняя маржа портфеля — <strong>${pct(summary.profit_margin_pct||0)}</strong>, рекламная эффективность — <strong>${ratio(summary.roas)}</strong>. Смотри блоки <strong>Прогноз остатков и прибыли</strong> и <strong>Центр уведомлений</strong> справа.` : 'Финансовые показатели скрыты для этой роли. Основной фокус — остатки, риски и операционные действия.'}`;
+        assistant.innerHTML=`Самый заметный риск сейчас — <strong>${riskiest.name}</strong>. Остатков хватит примерно на <strong>${Math.round(riskiest.days_of_cover)} дней</strong>, а срок поставки — <strong>${riskiest.lead_time_days} дней</strong>.${weakest ? `<br><br>Самая низкая прибыль по SKU сейчас у <strong>${weakest.name}</strong>: <strong>${money(weakest.contribution_per_unit)}</strong> на единицу.` : ''}<br><br>${financeVisible ? `Средняя маржа портфеля — <strong>${pct(summary.profit_margin_pct||0)}</strong>, рекламная эффективность — <strong>${ratio(summary.roas)}</strong>. Смотри блоки <strong>Прогноз остатков и прибыли</strong> и <strong>Центр уведомлений</strong> справа.` : 'Финансовые показатели скрыты для этой роли. Основной фокус — остатки, риски и операционные действия.'}`;
       }else{
         assistant.textContent='Пока нет данных по товарам. Загрузите CSV в онбординге.';
       }
@@ -755,7 +785,9 @@ async function renderDashboard(){
           const div=document.createElement('div');
           div.className='item';
           const state = (p.days_of_cover||0) <= 7 ? 'red' : (p.days_of_cover||0) <= 14 ? 'amber' : 'soft';
-          div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3><p class="small">${p.account} · ${p.sku}</p></div><span class="badge ${state}">${Math.round(p.days_of_cover||0)} дн.</span></div><p>Остаток <strong>${Number(p.stock||0)}</strong> шт. · средние продажи <strong>${Number(p.avg_daily_sales||0).toFixed(1)}</strong> / день · прогноз прибыли 30 дн. <strong>${money(p.forecast_profit_30d)}</strong>.</p><p class="small">Ожидаемая дата риска: <strong>${p.expected_stockout_date || '—'}</strong></p>`;
+          div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${p.account} · ${p.sku}</p></div><span class="badge ${state}">${Math.round(p.days_of_cover||0)} дней</span></div><p>Остаток <strong>${Number(p.stock||0)}</strong> шт. · средние продажи <strong>${Number(p.avg_daily_sales||0).toFixed(1)}</strong> / день · прогноз прибыли 30 дней <strong>${money(p.forecast_profit_30d)}</strong>.</p><p class="small">Ожидаемая дата риска: <strong>${p.expected_stockout_date || '—'}</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
           forecastList.appendChild(div);
         });
       if(!forecastList.children.length) forecastList.innerHTML='<div class="item"><p class="small">Прогноз появится после загрузки товаров.</p></div>';
@@ -766,14 +798,16 @@ async function renderDashboard(){
       notificationList.innerHTML='';
       const notes=[];
       products.forEach(p=>{
-        if((p.days_of_cover||0)<=7) notes.push({title:`Закупка: ${p.sku}`, body:`Остатка хватит примерно на ${Math.round(p.days_of_cover)} дн. При текущих продажах нужен заказ около ${p.reorder_qty||0} шт.`, level:'red', sort:1});
-        else if((p.days_of_cover||0)<=14) notes.push({title:`Остатки под контролем: ${p.sku}`, body:`До нуля около ${Math.round(p.days_of_cover)} дн. Есть время подготовить следующую поставку.`, level:'amber', sort:2});
+        if((p.days_of_cover||0)<=7) notes.push({title:`Закупка: ${p.sku}`, body:`Остатка хватит примерно на ${Math.round(p.days_of_cover)} дней При текущих продажах нужен заказ около ${p.reorder_qty||0} шт.`, level:'red', sort:1});
+        else if((p.days_of_cover||0)<=14) notes.push({title:`Остатки под контролем: ${p.sku}`, body:`До нуля около ${Math.round(p.days_of_cover)} дней Есть время подготовить следующую поставку.`, level:'amber', sort:2});
         if((p.contribution_per_unit||0)<120) notes.push({title:`Низкая прибыль: ${p.sku}`, body:`Прибыль на единицу ${money(p.contribution_per_unit)}. Проверь цену, логистику и рекламу.`, level:'amber', sort:3});
         if((p.forecast_profit_30d||0)<0) notes.push({title:`Отрицательный прогноз: ${p.sku}`, body:`Прогноз прибыли на 30 дней ${money(p.forecast_profit_30d)}. Товар может работать в минус.`, level:'red', sort:2});
         if((p.roas||0)>0 && (p.roas||0)<3) notes.push({title:`Реклама: ${p.sku}`, body:`ROAS ${ratio(p.roas)} и ACOS ${pct(p.acos_pct||0)} — реклама может не окупаться.`, level:'amber', sort:4});
       });
       notes.sort((a,b)=>(a.sort||9)-(b.sort||9));
-      notes.slice(0,10).forEach(n=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${n.title}</h3><p class="small">${n.body}</p></div><span class="badge ${n.level==='red'?'red':'amber'}">${n.level==='red'?'Срочно':'Контроль'}</span></div>`; notificationList.appendChild(div); });
+      notes.slice(0,10).forEach(n=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${n.title}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${n.body}</p></div><span class="badge ${n.level==='red'?'red':'amber'}">${n.level==='red'?'Срочно':'Контроль'}</span></div>`; notificationList.appendChild(div); });
       if(!notificationList.children.length) notificationList.innerHTML='<div class="success">Критичных уведомлений по текущим данным нет.</div>';
     }
 
@@ -801,7 +835,9 @@ async function renderDashboard(){
         procurementRows.slice(0,8).forEach(p=>{
           const div=document.createElement('div');
           div.className='item';
-          div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3><p class="small">${p.account} · ${p.warehouse}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>Рекомендуемый объём дозакупки: <strong>${p.reorder_qty} шт.</strong></p>`;
+          div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${p.account} · ${p.warehouse}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>Рекомендуемый объём дозакупки: <strong>${p.reorder_qty} шт.</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
           if(canUse('sku_details', s.org)){ div.style.cursor='pointer'; div.onclick=()=>{ setSelectedSku(p.sku); window.location='sku.html'; }; }
           procurementList.appendChild(div);
         });
@@ -819,7 +855,7 @@ async function renderDashboard(){
         procurementTable.innerHTML='';
         procurementRows.forEach(p=>{
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td>${canUse('sku_details', s.org) ? `<a href="sku.html" data-sku-link>${p.sku}</a>` : p.sku}</td><td>${p.name}</td><td>${p.warehouse}</td><td>${Math.round(p.days_of_cover)} дн.</td><td>${p.inbound}</td><td>${p.reorder_qty}</td><td>${riskLabel(p.stockout_risk)}</td>`;
+          tr.innerHTML=`<td>${canUse('sku_details', s.org) ? `<a href="sku.html" data-sku-link>${p.sku}</a>` : p.sku}</td><td>${p.name}</td><td>${p.warehouse}</td><td>${Math.round(p.days_of_cover)} дней</td><td>${p.inbound}</td><td>${p.reorder_qty}</td><td>${riskLabel(p.stockout_risk)}</td>`;
           if(canUse('sku_details', s.org)){ tr.querySelector('[data-sku-link]').onclick=(e)=>{ e.preventDefault(); setSelectedSku(p.sku); window.location='sku.html'; }; }
           procurementTable.appendChild(tr);
         });
@@ -838,7 +874,9 @@ async function renderDashboard(){
           const bad = p.contribution_per_unit < 140;
           const div=document.createElement('div');
           div.className='item';
-          div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3><p class="small">${p.account}</p></div><span class="badge ${bad?'red':'soft'}">${bad?'Низкая маржа':'Норма'}</span></div><p>Вклад в прибыль: <strong>${money(p.contribution_per_unit)}</strong> на единицу</p>`;
+          div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${p.account}</p></div><span class="badge ${bad?'red':'soft'}">${bad?'Низкая маржа':'Норма'}</span></div><p>Вклад в прибыль: <strong>${money(p.contribution_per_unit)}</strong> на единицу + `<p class="recommend">${recommendationText(p)}</p>`;
           if(canUse('sku_details', s.org)){ div.style.cursor='pointer'; div.onclick=()=>{ setSelectedSku(p.sku); window.location='sku.html'; }; }
           financeMarginList.appendChild(div);
         });
@@ -849,7 +887,9 @@ async function renderDashboard(){
           frozenRows.slice(0,6).forEach(p=>{
             const div=document.createElement('div');
             div.className='item';
-            div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3><p class="small">${p.account}</p></div><span class="badge amber">Избыточный остаток</span></div><p>Покрытие: <strong>${Math.round(p.days_of_cover)} дн.</strong></p>`;
+            div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${p.account}</p></div><span class="badge amber">Избыточный остаток</span></div><p>Покрытие: <strong>${Math.round(p.days_of_cover)} дней</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
             financeCashList.appendChild(div);
           });
         }else{
@@ -879,7 +919,9 @@ async function renderDashboard(){
         members.forEach(m=>{
           const div=document.createElement('div');
           div.className='item';
-          div.innerHTML=`<div class="item-top"><div><h3>${m.full_name}</h3><p class="small">${m.email}</p></div><span class="badge soft">${m.role}</span></div><p class="small">${m.status}</p>`;
+          div.innerHTML=`<div class="item-top"><div><h3>${m.full_name}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${m.email}</p></div><span class="badge soft">${m.role}</span></div><p class="small">${m.status} + `<p class="recommend">${recommendationText(p)}</p>`;
           teamMembers.appendChild(div);
         });
         if(!members.length){
@@ -890,7 +932,9 @@ async function renderDashboard(){
         invites.forEach(inv=>{
           const div=document.createElement('div');
           div.className='item';
-          div.innerHTML=`<div class="item-top"><div><h3>${inv.email}</h3><p class="small">${inv.status}</p></div><span class="badge amber">${inv.role}</span></div>`;
+          div.innerHTML=`<div class="item-top"><div><h3>${inv.email}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${inv.status}</p></div><span class="badge amber">${inv.role}</span></div>`;
           teamInvites.appendChild(div);
         });
         if(!invites.length){
@@ -967,8 +1011,12 @@ async function renderSettings(){
     if(teamEnabled){
       const members=await api(`/api/v1/members?organization_id=${s.org.id}`);
       const invites=await api(`/api/v1/invites?organization_id=${s.org.id}`);
-      const mh=document.getElementById('members'); if(mh){ mh.innerHTML=''; members.forEach(m=>{const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${m.full_name}</h3><p class="small">${m.email}</p></div><span class="badge soft">${m.role}</span></div><p class="small">${m.status}</p>`; mh.appendChild(div);}); if(!members.length){mh.innerHTML='<div class="item"><p class="small">В команде пока только владелец организации.</p></div>';}}
-      const ih=document.getElementById('invites'); if(ih){ ih.innerHTML=''; invites.forEach(inv=>{const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${inv.email}</h3><p class="small">${inv.status}</p></div><span class="badge amber">${inv.role}</span></div>`; ih.appendChild(div);}); if(!invites.length){ih.innerHTML='<div class="item"><p class="small">Приглашений пока нет.</p></div>';}}
+      const mh=document.getElementById('members'); if(mh){ mh.innerHTML=''; members.forEach(m=>{const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${m.full_name}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${m.email}</p></div><span class="badge soft">${m.role}</span></div><p class="small">${m.status} + `<p class="recommend">${recommendationText(p)}</p>`; mh.appendChild(div);}); if(!members.length){mh.innerHTML='<div class="item"><p class="small">В команде пока только владелец организации.</p></div>';}}
+      const ih=document.getElementById('invites'); if(ih){ ih.innerHTML=''; invites.forEach(inv=>{const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${inv.email}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">${inv.status}</p></div><span class="badge amber">${inv.role}</span></div>`; ih.appendChild(div);}); if(!invites.length){ih.innerHTML='<div class="item"><p class="small">Приглашений пока нет.</p></div>';}}
     }
     if(canUse('import_history', s.org)){
       const history = await api(`/api/v1/import-history?organization_id=${s.org.id}`);
@@ -980,7 +1028,9 @@ async function renderSettings(){
           const dt = new Date(record.created_at);
           const whoText = record.imported_by_name ? `${record.imported_by_name} · ${record.imported_by_email}` : (record.imported_by_email || '—');
           const changeText = `Новых: ${record.added_count||0} · Обновлено: ${record.updated_count||0} · Удалено: ${record.removed_count||0}`;
-          div.innerHTML=`<div class="item-top"><div><h3>${dt.toLocaleString('ru-RU')}</h3><p class="small">Импортировал: ${whoText}</p></div><span class="badge soft">${record.mode}</span></div><p class="small">Строк: ${record.row_count} · ${changeText}</p>`;
+          div.innerHTML=`<div class="item-top"><div><h3>${dt.toLocaleString('ru-RU')}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">Импортировал: ${whoText}</p></div><span class="badge soft">${record.mode}</span></div><p class="small">Строк: ${record.row_count} · ${changeText} + `<p class="recommend">${recommendationText(p)}</p>`;
           historyList.appendChild(div);
         });
         if(!history.length){ historyList.innerHTML='<div class="item"><p class="small">История импортов пока пуста.</p></div>'; }
@@ -1028,7 +1078,7 @@ async function renderSkuDetails(){
     document.getElementById('skuRisk').textContent = riskLabel(p.stockout_risk);
     document.getElementById('skuRisk').className = `badge ${riskClass(p.stockout_risk)}`;
 
-    document.getElementById('detailKpi1').textContent = `${Math.round(p.days_of_cover)} дн.`;
+    document.getElementById('detailKpi1').textContent = `${Math.round(p.days_of_cover)} дней`;
     document.getElementById('detailKpi2').textContent = p.reorder_qty > 0 ? `${p.reorder_qty} шт.` : '—';
     document.getElementById('detailKpi3').textContent = money(p.contribution_per_unit);
     document.getElementById('detailKpi4').textContent = money((p.price || 0) * (p.avg_daily_sales || 0) * 30);
@@ -1046,16 +1096,16 @@ async function renderSkuDetails(){
 
     const recommendations = [];
     if(p.stockout_risk === 'high'){
-      recommendations.push(`Срочно согласовать дозакупку в объёме ${p.reorder_qty} шт., потому что покрытие ${Math.round(p.days_of_cover)} дн. меньше срока поставки ${p.lead_time_days} дн.`);
+      recommendations.push(`Срочно согласовать дозакупку в объёме ${p.reorder_qty} шт., потому что покрытие ${Math.round(p.days_of_cover)} дней меньше срока поставки ${p.lead_time_days} дней`);
     }
     if(p.stockout_risk === 'medium'){
-      recommendations.push(`Поставить товар на контроль: покрытие ${Math.round(p.days_of_cover)} дн., нужен резерв под срок поставки ${p.lead_time_days} дн.`);
+      recommendations.push(`Поставить товар на контроль: покрытие ${Math.round(p.days_of_cover)} дней, нужен резерв под срок поставки ${p.lead_time_days} дней`);
     }
     if((p.contribution_per_unit || 0) < 140){
       recommendations.push(`Проверить цену, рекламу и логистику: вклад в прибыль ${money(p.contribution_per_unit)} на единицу слишком низкий.`);
     }
     if((p.days_of_cover || 0) > 45){
-      recommendations.push(`Снизить заморозку капитала: покрытие ${Math.round(p.days_of_cover)} дн. указывает на избыточный остаток.`);
+      recommendations.push(`Снизить заморозку капитала: покрытие ${Math.round(p.days_of_cover)} дней указывает на избыточный остаток.`);
     }
     if(!recommendations.length){
       recommendations.push('По текущим данным товар выглядит стабильным. Достаточно наблюдать за продажами и сроком поставки.');
@@ -1066,7 +1116,7 @@ async function renderSkuDetails(){
     recommendations.forEach(text=>{
       const div=document.createElement('div');
       div.className='item';
-      div.innerHTML=`<p>${text}</p>`;
+      div.innerHTML=`<p>${text} + `<p class="recommend">${recommendationText(p)}</p>`;
       recHolder.appendChild(div);
     });
 
@@ -1104,7 +1154,9 @@ async function renderInviteAccept(){
   if(registerLink) registerLink.href=`register.html?invite=${encodeURIComponent(token)}`;
   try{
     const invite=await api(`/api/v1/invites/public?token=${encodeURIComponent(token)}`, {headers:{}});
-    holder.innerHTML = `<div class="item"><div class="item-top"><div><h3>${invite.organization_name}</h3><p class="small">Приглашён: ${invite.email}</p></div><span class="badge amber">${invite.role}</span></div><p class="small">Статус: ${invite.status}. Создано: ${fmtDate(invite.created_at)}</p></div>`;
+    holder.innerHTML = `<div class="item"><div class="item-top"><div><h3>${invite.organization_name}</h3>
+    <button class="btn ghost action-btn">Действие</button>
+    <p class="small">Приглашён: ${invite.email}</p></div><span class="badge amber">${invite.role}</span></div><p class="small">Статус: ${invite.status}. Создано: ${fmtDate(invite.created_at)}</p></div>`;
     const btn=document.getElementById('acceptInviteBtn');
     if(btn){
       btn.onclick=async()=>{

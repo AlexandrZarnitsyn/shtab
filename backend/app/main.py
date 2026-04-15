@@ -1987,48 +1987,6 @@ def admin_list_organizations_v2(authorization: Optional[str] = Header(default=No
     return out
 
 
-
-
-def admin_delete_organization_cascade(conn, org_id: int, actor_user_id: int):
-    org = conn.execute("SELECT * FROM organizations WHERE id = ?", (org_id,)).fetchone()
-    if not org:
-        raise HTTPException(status_code=404, detail='Organization not found')
-    owner_email_row = conn.execute("SELECT email FROM users WHERE id = ?", (org["owner_user_id"],)).fetchone()
-    owner_email = (owner_email_row["email"] if owner_email_row else '') or ''
-    log_action(conn, org_id, actor_user_id, 'Организация удалена главным администратором', 'organization', str(org_id), {'organization_name': org['name'], 'owner_user_id': org['owner_user_id'], 'owner_email': owner_email})
-    conn.execute("DELETE FROM marketplace_sync_logs WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM marketplace_connections WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM manual_payments WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM audit_logs WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM product_imports WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM products WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM invites WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM memberships WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM admin_client_meta WHERE organization_id = ?", (org_id,))
-    conn.execute("DELETE FROM organizations WHERE id = ?", (org_id,))
-    return {'ok': True, 'deleted_org_id': org_id, 'deleted_org_name': org['name']}
-
-
-def admin_delete_user_account(conn, user_id: int, actor_user_id: int):
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    if not user:
-        raise HTTPException(status_code=404, detail='Пользователь не найден')
-    if (user['email'] or '').strip().lower() == SUPERADMIN_EMAIL.strip().lower():
-        raise HTTPException(status_code=400, detail='Нельзя удалить главного администратора')
-    owned = conn.execute("SELECT id, name FROM organizations WHERE owner_user_id = ? ORDER BY id ASC", (user_id,)).fetchall()
-    if owned:
-        names = ', '.join([r['name'] for r in owned[:3]])
-        suffix = '' if len(owned) <= 3 else '…'
-        raise HTTPException(status_code=400, detail=f'Сначала удалите или передайте организации пользователя: {names}{suffix}')
-    conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
-    conn.execute("DELETE FROM invites WHERE lower(email) = ?", ((user['email'] or '').strip().lower(),))
-    conn.execute("DELETE FROM memberships WHERE user_id = ?", (user_id,))
-    conn.execute("UPDATE manual_payments SET actor_user_id = NULL WHERE actor_user_id = ?", (user_id,))
-    conn.execute("UPDATE product_imports SET imported_by_user_id = 0 WHERE imported_by_user_id = ?", (user_id,))
-    conn.execute("UPDATE audit_logs SET actor_user_id = NULL WHERE actor_user_id = ?", (user_id,))
-    conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
-    return {'ok': True, 'deleted_user_id': user_id, 'deleted_user_email': user['email'], 'deleted_user_name': user['full_name']}
-
 @app.get('/api/v1/admin/organizations/{org_id}')
 def admin_get_organization(org_id: int, authorization: Optional[str] = Header(default=None)):
     ensure_super_admin(authorization)
@@ -2047,27 +2005,6 @@ def admin_get_organization(org_id: int, authorization: Optional[str] = Header(de
     conn.close()
     return payload
 
-
-
-
-@app.delete('/api/v1/admin/organizations/{org_id}')
-def admin_delete_organization(org_id: int, authorization: Optional[str] = Header(default=None)):
-    admin_user = ensure_super_admin(authorization)
-    conn = db()
-    result = admin_delete_organization_cascade(conn, org_id, int(admin_user['id']))
-    conn.commit()
-    conn.close()
-    return result
-
-
-@app.delete('/api/v1/admin/users/{user_id}')
-def admin_delete_user(user_id: int, authorization: Optional[str] = Header(default=None)):
-    admin_user = ensure_super_admin(authorization)
-    conn = db()
-    result = admin_delete_user_account(conn, user_id, int(admin_user['id']))
-    conn.commit()
-    conn.close()
-    return result
 
 @app.put('/api/v1/admin/organizations/{org_id}/meta')
 def admin_update_meta(org_id: int, payload: AdminMetaUpdateIn, authorization: Optional[str] = Header(default=None)):
