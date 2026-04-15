@@ -1,5 +1,5 @@
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException, Header, Query
+from fastapi import FastAPI, HTTPException, Header, Query, Request
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 import base64
@@ -1350,7 +1350,7 @@ def list_invites(organization_id: int = Query(...), authorization: Optional[str]
 
 
 @app.post("/api/v1/invites")
-def create_invite(payload: InviteIn, organization_id: int = Query(...), authorization: Optional[str] = Header(default=None)):
+def create_invite(payload: InviteIn, request: Request, organization_id: int = Query(...), authorization: Optional[str] = Header(default=None)):
     user_id = get_user_id_from_token(authorization)
     ensure_org_permission(user_id, organization_id, "manage_team")
     org = get_org(organization_id)
@@ -1391,7 +1391,8 @@ def create_invite(payload: InviteIn, organization_id: int = Query(...), authoriz
         "INSERT INTO invites(organization_id, email, role, status, token, created_at, accepted_at) VALUES(?, ?, ?, ?, ?, ?, ?)",
         (organization_id, payload.email.lower(), payload.role, "Приглашение отправлено", token, iso_now(), "")
     )
-    public_link = f"{request.base_url.scheme}://{request.base_url.netloc}/invite.html?token={token}"
+    base_url = str(request.base_url).rstrip("/")
+    public_link = f"{base_url}/invite.html?token={token}"
     log_action(conn, organization_id, user_id, "Приглашение отправлено", "invite", token, {"email": payload.email.lower(), "role": payload.role, "public_link": public_link})
     conn.commit()
     conn.close()

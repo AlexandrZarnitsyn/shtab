@@ -1,0 +1,5 @@
+Исправление приглашений:
+- В backend/app/main.py добавлен импорт Request.
+- В POST /api/v1/invites добавлен параметр request: Request.
+- Генерация invite_link теперь использует текущий домен из request.base_url.
+Причина ошибки 500: в create_invite использовалась переменная request, но она не была передана в обработчик.
