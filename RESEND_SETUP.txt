@@ -1,0 +1,7 @@
+Настройка Resend:
+RESEND_API_KEY=re_QfqZXsrg_KJ4cTiwumpvnGi5AyFibH3XG
+FRONTEND_ORIGIN=https://shtab-three.vercel.app
+
+Дополнительно можно задать:
+RESEND_FROM_EMAIL=onboarding@resend.dev
+PASSWORD_RESET_TTL_MINUTES=30
