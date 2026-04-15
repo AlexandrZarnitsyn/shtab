@@ -93,3 +93,16 @@ span, div {
   background: none !important;
 }
 
+
+
+/* FINAL CLEAN STATUS FIX */
+.badge, .status, .tag, .pill {
+  all: unset !important;
+  color: inherit !important;
+}
+
+/* specific high label */
+.high, .status-high {
+  color: #ff5a5a !important;
+}
+
