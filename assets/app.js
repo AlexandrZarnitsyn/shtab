@@ -1,22 +1,4 @@
 
-function renderEmptyState(container, text, actionText, actionFn){
-  container.innerHTML = `
-    <div class="empty">
-      <p>${text}</p>
-      <button class="btn primary" onclick="${actionFn}">${actionText}</button>
-    </div>
-  `;
-}
-
-function recommendationText(p){
-  if(p.stockout_risk === 'high'){
-    return `👉 Срочно закажи ${p.reorder_qty} шт.`;
-  }
-  if(p.stockout_risk === 'medium'){
-    return `👉 Проверь закупку: ${p.reorder_qty} шт.`;
-  }
-  return `✅ Всё стабильно`;
-}
 
 
 const API_BASE =
@@ -94,11 +76,11 @@ const TRANSLATIONS = {
     'Фокус сейчас:': 'Current focus:',
     'понятный вход, аккуратный интерфейс, ручная выдача доступа и контроль над клиентами из одной админ-панели.': 'clear onboarding, a clean interface, manual access granting, and client control from one admin panel.',
     'Выбери организацию слева.': 'Choose an organization on the left.',
-    'Период, дней': 'Period, days',
+    'Период, дн.': 'Period, days',
     'Быстрый срок': 'Quick duration',
-    'Продлить на 30 дней': 'Extend for 30 days',
-    'Продлить на 90 дней': 'Extend for 90 days',
-    'Продлить на 365 дней': 'Extend for 365 days',
+    'Продлить на 30 дн.': 'Extend for 30 days',
+    'Продлить на 90 дн.': 'Extend for 90 days',
+    'Продлить на 365 дн.': 'Extend for 365 days',
     'Выдать тариф': 'Grant plan',
     'Снять доступ': 'Remove access',
     'История ручных оплат': 'Manual payment history',
@@ -177,7 +159,7 @@ const PARTIAL_TRANSLATIONS = {
     ' шт.': ' pcs',
     'Проверить восстановление маржи': 'Review margin recovery',
     'Хватит на ': 'Coverage ',
-    ' дней': ' days',
+    ' дн.': ' days',
     ' при сроке поставки ': ' with lead time ',
     'Вклад в прибыль ': 'Profit contribution ',
     ' на единицу': ' per unit',
@@ -187,7 +169,7 @@ const PARTIAL_TRANSLATIONS = {
     'Средняя маржа портфеля — ': 'Average portfolio margin is ',
     'рекламная эффективность — ': 'ad efficiency is ',
     'Финансовые показатели скрыты для этой роли. Основной фокус — остатки, риски и операционные действия.': 'Financial metrics are hidden for this role. Focus on stock, risks, and operational actions.',
-    'Прогноз на 30 дней: выручка ': '30-day forecast: revenue ',
+    'Прогноз на 30 дн.: выручка ': '30-day forecast: revenue ',
     'прибыль ': 'profit ',
     'Прогноз появится после загрузки товаров.': 'The forecast will appear after products are loaded.',
     'Закупка: ': 'Restock: ',
@@ -262,7 +244,7 @@ const PARTIAL_TRANSLATIONS = {
     'Главная админка': 'Main admin panel',
     'Только этот аккаунт может вручную выдавать тарифы, продлевать срок доступа и контролировать организации клиентов.': 'Only this account can grant plans manually, extend access, and manage client organizations.',
     'Найди организацию, выбери срок и сразу открой доступ без автоматической оплаты.': 'Find an organization, choose a duration, and grant access immediately without automatic payments.',
-    'Срок, дней': 'Duration, days',
+    'Срок, дн.': 'Duration, days',
     'Быстрые действия': 'Quick actions',
     'Последние активации': 'Recent activations',
     'Инвайт': 'Invite',
@@ -598,6 +580,13 @@ function riskClass(value){
   return value === 'high' ? 'red' : value === 'medium' ? 'amber' : 'soft';
 }
 
+function recommendationText(p){
+  if(!p) return '';
+  if(p.stockout_risk === 'high') return `👉 Срочно закажи ${p.reorder_qty} шт.`;
+  if(p.stockout_risk === 'medium') return `👉 Проверь закупку: ${p.reorder_qty} шт.`;
+  return '✅ Всё стабильно';
+}
+
 function compareProductRows(currentRows, nextRows){
   const current = Object.fromEntries((currentRows||[]).map(r=>[String(r.sku||r.id).toLowerCase(), r]));
   const incoming = Object.fromEntries((nextRows||[]).map(r=>[String(r.id||r.sku).toLowerCase(), r]));
@@ -738,7 +727,7 @@ async function renderDashboard(){
       div.className='item';
       div.innerHTML=`<div class="item-top"><div><h3>${p.stockout_risk!=='low' ? 'Согласовать закупку ' + p.reorder_qty + ' шт.' : 'Проверить восстановление маржи'}</h3>
     <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${p.name} · ${p.account}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>${p.stockout_risk!=='low' ? 'Хватит на ' + Math.round(p.days_of_cover) + ' дней при сроке поставки ' + p.lead_time_days + ' дней' : 'Вклад в прибыль ' + hiddenMoney(p.contribution_per_unit) + ' на единицу'} + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${p.name} · ${p.account}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>${p.stockout_risk!=='low' ? 'Хватит на ' + Math.round(p.days_of_cover) + ' дн. при сроке поставки ' + p.lead_time_days + ' дн.' : 'Вклад в прибыль ' + hiddenMoney(p.contribution_per_unit) + ' на единицу'} + `<p class="recommend">${recommendationText(p)}</p>`;
       actions.appendChild(div);
     });
     if(!actions.children.length){
@@ -756,7 +745,7 @@ async function renderDashboard(){
       const expectedDate = p.expected_stockout_date || '—';
       const unitProfit = hiddenMoney(p.contribution_per_unit);
       const forecastProfit = hiddenMoney(p.forecast_profit_30d);
-      tr.innerHTML=`<td>${canSku ? `<a href="sku.html" data-sku-link>${p.sku}</a>` : p.sku}</td><td>${p.account}</td><td>${p.name}</td><td>${stock}</td><td>${avg.toFixed(1)}</td><td>${Math.round(cover)} дней</td><td>${expectedDate}</td><td>${p.reorder_qty>0 ? p.reorder_qty + ' шт.' : '—'}</td><td>${unitProfit}</td><td>${forecastProfit}</td><td>${riskLabel(p.stockout_risk)}</td>`;
+      tr.innerHTML=`<td>${canSku ? `<a href="sku.html" data-sku-link>${p.sku}</a>` : p.sku}</td><td>${p.account}</td><td>${p.name}</td><td>${stock}</td><td>${avg.toFixed(1)}</td><td>${Math.round(cover)} дн.</td><td>${expectedDate}</td><td>${p.reorder_qty>0 ? p.reorder_qty + ' шт.' : '—'}</td><td>${unitProfit}</td><td>${forecastProfit}</td><td>${riskLabel(p.stockout_risk)}</td>`;
       if(canSku){
         tr.querySelector('[data-sku-link]').onclick=(e)=>{ e.preventDefault(); setSelectedSku(p.sku); window.location='sku.html'; };
       }
@@ -769,7 +758,7 @@ async function renderDashboard(){
         const riskiest=[...products].sort((a,b)=>a.days_of_cover-b.days_of_cover)[0];
         const financeVisible = canRole('view_finance', s.org);
         const weakest = financeVisible ? [...products].filter(x=>x.contribution_per_unit != null).sort((a,b)=>a.contribution_per_unit-b.contribution_per_unit)[0] : null;
-        assistant.innerHTML=`Самый заметный риск сейчас — <strong>${riskiest.name}</strong>. Остатков хватит примерно на <strong>${Math.round(riskiest.days_of_cover)} дней</strong>, а срок поставки — <strong>${riskiest.lead_time_days} дней</strong>.${weakest ? `<br><br>Самая низкая прибыль по SKU сейчас у <strong>${weakest.name}</strong>: <strong>${money(weakest.contribution_per_unit)}</strong> на единицу.` : ''}<br><br>${financeVisible ? `Средняя маржа портфеля — <strong>${pct(summary.profit_margin_pct||0)}</strong>, рекламная эффективность — <strong>${ratio(summary.roas)}</strong>. Смотри блоки <strong>Прогноз остатков и прибыли</strong> и <strong>Центр уведомлений</strong> справа.` : 'Финансовые показатели скрыты для этой роли. Основной фокус — остатки, риски и операционные действия.'}`;
+        assistant.innerHTML=`Самый заметный риск сейчас — <strong>${riskiest.name}</strong>. Остатков хватит примерно на <strong>${Math.round(riskiest.days_of_cover)} дн.</strong>, а срок поставки — <strong>${riskiest.lead_time_days} дн.</strong>.${weakest ? `<br><br>Самая низкая прибыль по SKU сейчас у <strong>${weakest.name}</strong>: <strong>${money(weakest.contribution_per_unit)}</strong> на единицу.` : ''}<br><br>${financeVisible ? `Средняя маржа портфеля — <strong>${pct(summary.profit_margin_pct||0)}</strong>, рекламная эффективность — <strong>${ratio(summary.roas)}</strong>. Смотри блоки <strong>Прогноз остатков и прибыли</strong> и <strong>Центр уведомлений</strong> справа.` : 'Финансовые показатели скрыты для этой роли. Основной фокус — остатки, риски и операционные действия.'}`;
       }else{
         assistant.textContent='Пока нет данных по товарам. Загрузите CSV в онбординге.';
       }
@@ -787,7 +776,7 @@ async function renderDashboard(){
           const state = (p.days_of_cover||0) <= 7 ? 'red' : (p.days_of_cover||0) <= 14 ? 'amber' : 'soft';
           div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
     <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${p.account} · ${p.sku}</p></div><span class="badge ${state}">${Math.round(p.days_of_cover||0)} дней</span></div><p>Остаток <strong>${Number(p.stock||0)}</strong> шт. · средние продажи <strong>${Number(p.avg_daily_sales||0).toFixed(1)}</strong> / день · прогноз прибыли 30 дней <strong>${money(p.forecast_profit_30d)}</strong>.</p><p class="small">Ожидаемая дата риска: <strong>${p.expected_stockout_date || '—'}</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${p.account} · ${p.sku}</p></div><span class="badge ${state}">${Math.round(p.days_of_cover||0)} дн.</span></div><p>Остаток <strong>${Number(p.stock||0)}</strong> шт. · средние продажи <strong>${Number(p.avg_daily_sales||0).toFixed(1)}</strong> / день · прогноз прибыли 30 дн. <strong>${money(p.forecast_profit_30d)}</strong>.</p><p class="small">Ожидаемая дата риска: <strong>${p.expected_stockout_date || '—'}</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
           forecastList.appendChild(div);
         });
       if(!forecastList.children.length) forecastList.innerHTML='<div class="item"><p class="small">Прогноз появится после загрузки товаров.</p></div>';
@@ -798,10 +787,10 @@ async function renderDashboard(){
       notificationList.innerHTML='';
       const notes=[];
       products.forEach(p=>{
-        if((p.days_of_cover||0)<=7) notes.push({title:`Закупка: ${p.sku}`, body:`Остатка хватит примерно на ${Math.round(p.days_of_cover)} дней При текущих продажах нужен заказ около ${p.reorder_qty||0} шт.`, level:'red', sort:1});
-        else if((p.days_of_cover||0)<=14) notes.push({title:`Остатки под контролем: ${p.sku}`, body:`До нуля около ${Math.round(p.days_of_cover)} дней Есть время подготовить следующую поставку.`, level:'amber', sort:2});
+        if((p.days_of_cover||0)<=7) notes.push({title:`Закупка: ${p.sku}`, body:`Остатка хватит примерно на ${Math.round(p.days_of_cover)} дн. При текущих продажах нужен заказ около ${p.reorder_qty||0} шт.`, level:'red', sort:1});
+        else if((p.days_of_cover||0)<=14) notes.push({title:`Остатки под контролем: ${p.sku}`, body:`До нуля около ${Math.round(p.days_of_cover)} дн. Есть время подготовить следующую поставку.`, level:'amber', sort:2});
         if((p.contribution_per_unit||0)<120) notes.push({title:`Низкая прибыль: ${p.sku}`, body:`Прибыль на единицу ${money(p.contribution_per_unit)}. Проверь цену, логистику и рекламу.`, level:'amber', sort:3});
-        if((p.forecast_profit_30d||0)<0) notes.push({title:`Отрицательный прогноз: ${p.sku}`, body:`Прогноз прибыли на 30 дней ${money(p.forecast_profit_30d)}. Товар может работать в минус.`, level:'red', sort:2});
+        if((p.forecast_profit_30d||0)<0) notes.push({title:`Отрицательный прогноз: ${p.sku}`, body:`Прогноз прибыли на 30 дн. ${money(p.forecast_profit_30d)}. Товар может работать в минус.`, level:'red', sort:2});
         if((p.roas||0)>0 && (p.roas||0)<3) notes.push({title:`Реклама: ${p.sku}`, body:`ROAS ${ratio(p.roas)} и ACOS ${pct(p.acos_pct||0)} — реклама может не окупаться.`, level:'amber', sort:4});
       });
       notes.sort((a,b)=>(a.sort||9)-(b.sort||9));
@@ -855,7 +844,7 @@ async function renderDashboard(){
         procurementTable.innerHTML='';
         procurementRows.forEach(p=>{
           const tr=document.createElement('tr');
-          tr.innerHTML=`<td>${canUse('sku_details', s.org) ? `<a href="sku.html" data-sku-link>${p.sku}</a>` : p.sku}</td><td>${p.name}</td><td>${p.warehouse}</td><td>${Math.round(p.days_of_cover)} дней</td><td>${p.inbound}</td><td>${p.reorder_qty}</td><td>${riskLabel(p.stockout_risk)}</td>`;
+          tr.innerHTML=`<td>${canUse('sku_details', s.org) ? `<a href="sku.html" data-sku-link>${p.sku}</a>` : p.sku}</td><td>${p.name}</td><td>${p.warehouse}</td><td>${Math.round(p.days_of_cover)} дн.</td><td>${p.inbound}</td><td>${p.reorder_qty}</td><td>${riskLabel(p.stockout_risk)}</td>`;
           if(canUse('sku_details', s.org)){ tr.querySelector('[data-sku-link]').onclick=(e)=>{ e.preventDefault(); setSelectedSku(p.sku); window.location='sku.html'; }; }
           procurementTable.appendChild(tr);
         });
@@ -889,7 +878,7 @@ async function renderDashboard(){
             div.className='item';
             div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
     <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${p.account}</p></div><span class="badge amber">Избыточный остаток</span></div><p>Покрытие: <strong>${Math.round(p.days_of_cover)} дней</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${p.account}</p></div><span class="badge amber">Избыточный остаток</span></div><p>Покрытие: <strong>${Math.round(p.days_of_cover)} дн.</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
             financeCashList.appendChild(div);
           });
         }else{
@@ -1078,7 +1067,7 @@ async function renderSkuDetails(){
     document.getElementById('skuRisk').textContent = riskLabel(p.stockout_risk);
     document.getElementById('skuRisk').className = `badge ${riskClass(p.stockout_risk)}`;
 
-    document.getElementById('detailKpi1').textContent = `${Math.round(p.days_of_cover)} дней`;
+    document.getElementById('detailKpi1').textContent = `${Math.round(p.days_of_cover)} дн.`;
     document.getElementById('detailKpi2').textContent = p.reorder_qty > 0 ? `${p.reorder_qty} шт.` : '—';
     document.getElementById('detailKpi3').textContent = money(p.contribution_per_unit);
     document.getElementById('detailKpi4').textContent = money((p.price || 0) * (p.avg_daily_sales || 0) * 30);
@@ -1091,21 +1080,21 @@ async function renderSkuDetails(){
       <div class="item"><h3>ROAS / ACOS</h3><p><strong>${ratio(p.roas)}</strong> / <strong>${p.acos_pct==null?'—':pct(p.acos_pct||0)}</strong></p></div>
       <div class="item"><h3>Цена безубыточности</h3><p><strong>${money(p.break_even_price)}</strong></p></div>
       <div class="item"><h3>Рекомендованная цена</h3><p><strong>${money(p.recommended_price)}</strong></p></div>
-      <div class="item"><h3>Прогноз прибыли за 30 дней</h3><p><strong>${money(p.forecast_profit_30d)}</strong></p></div>
+      <div class="item"><h3>Прогноз прибыли за 30 дн.</h3><p><strong>${money(p.forecast_profit_30d)}</strong></p></div>
     `;
 
     const recommendations = [];
     if(p.stockout_risk === 'high'){
-      recommendations.push(`Срочно согласовать дозакупку в объёме ${p.reorder_qty} шт., потому что покрытие ${Math.round(p.days_of_cover)} дней меньше срока поставки ${p.lead_time_days} дней`);
+      recommendations.push(`Срочно согласовать дозакупку в объёме ${p.reorder_qty} шт., потому что покрытие ${Math.round(p.days_of_cover)} дн. меньше срока поставки ${p.lead_time_days} дн.`);
     }
     if(p.stockout_risk === 'medium'){
-      recommendations.push(`Поставить товар на контроль: покрытие ${Math.round(p.days_of_cover)} дней, нужен резерв под срок поставки ${p.lead_time_days} дней`);
+      recommendations.push(`Поставить товар на контроль: покрытие ${Math.round(p.days_of_cover)} дн., нужен резерв под срок поставки ${p.lead_time_days} дн.`);
     }
     if((p.contribution_per_unit || 0) < 140){
       recommendations.push(`Проверить цену, рекламу и логистику: вклад в прибыль ${money(p.contribution_per_unit)} на единицу слишком низкий.`);
     }
     if((p.days_of_cover || 0) > 45){
-      recommendations.push(`Снизить заморозку капитала: покрытие ${Math.round(p.days_of_cover)} дней указывает на избыточный остаток.`);
+      recommendations.push(`Снизить заморозку капитала: покрытие ${Math.round(p.days_of_cover)} дн. указывает на избыточный остаток.`);
     }
     if(!recommendations.length){
       recommendations.push('По текущим данным товар выглядит стабильным. Достаточно наблюдать за продажами и сроком поставки.');
