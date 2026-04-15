@@ -1,0 +1,1 @@
+Status labels are now text-only in both light and dark themes.
