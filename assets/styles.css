@@ -705,3 +705,95 @@ html[data-theme="dark"] .select-link{
   padding: 0 !important;
 }
 
+
+
+
+/* Theme optimization patch */
+:root {
+  color-scheme: light dark;
+  --app-bg: #f6f8fc;
+  --surface: #ffffff;
+  --surface-2: #eef3fb;
+  --text-main: #162033;
+  --text-muted: #5f6f8c;
+  --border-soft: rgba(28, 61, 125, 0.14);
+  --accent-blue: #2563eb;
+  --danger-text: #d14343;
+  --warn-text: #b7791f;
+  --success-text: #1f8a4c;
+}
+
+html.dark,
+body.dark,
+[data-theme="dark"] {
+  --app-bg: #071225;
+  --surface: #0d1a31;
+  --surface-2: #10203d;
+  --text-main: #eef4ff;
+  --text-muted: #a9b7d3;
+  --border-soft: rgba(95, 137, 224, 0.20);
+  --accent-blue: #6ea8ff;
+  --danger-text: #ff8e8e;
+  --warn-text: #ffd166;
+  --success-text: #7fe3a1;
+}
+
+html, body {
+  background: var(--app-bg) !important;
+  color: var(--text-main) !important;
+}
+
+body, p, span, div, small, li, td, th, label, input, textarea, select, button, h1, h2, h3, h4, h5, h6 {
+  color: inherit;
+}
+
+.card, .panel, .widget, .modal, .sheet, .tile, .block, .forecast-card, .inventory-card, .risk-card {
+  background: var(--surface) !important;
+  border-color: var(--border-soft) !important;
+  color: var(--text-main) !important;
+}
+
+input, textarea, select {
+  background: var(--surface-2) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-soft) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+button {
+  color: inherit;
+}
+
+.muted, .secondary, .subtle, .hint, .caption, .meta, .text-muted {
+  color: var(--text-muted) !important;
+}
+
+.badge, .status, .tag, .pill {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.high, .status-high, .danger, .risk-high {
+  color: var(--danger-text) !important;
+}
+.medium, .status-medium, .warning, .risk-medium {
+  color: var(--warn-text) !important;
+}
+.low, .status-low, .success, .ok, .risk-low {
+  color: var(--success-text) !important;
+}
+
+a {
+  color: var(--accent-blue) !important;
+}
+
+svg, img {
+  color: inherit;
+}
+

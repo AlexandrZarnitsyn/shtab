@@ -1,0 +1,6 @@
+Theme optimization applied:
+- better contrast in light and dark themes
+- transparent status labels with text-only colors
+- safer card/input/background colors via CSS variables
+
+If some specific block still looks off, send a screenshot of that exact block and I can patch it precisely.
