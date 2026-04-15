@@ -12,3 +12,16 @@ body{background:
 }
 .btn.primary,.tab.active,.sidebar-link.active,
 .btn.primary *, .tab.active *, .sidebar-link.active *{color:#fff !important}
+
+
+/* FIX BADGES */
+.badge {
+  background: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.badge.red { color: #ff5a5a !important; }
+.badge.yellow { color: #f5c542 !important; }
+.badge.blue { color: #4caf50 !important; }
+

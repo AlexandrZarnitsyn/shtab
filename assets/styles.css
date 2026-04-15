@@ -682,3 +682,16 @@ html[data-theme="dark"] .select-link{
 /* stock forecast / profit enhancements */
 .table td, .table th{white-space:nowrap;}
 #notificationList .item p, #forecastList .item p{line-height:1.45;}
+
+
+/* FIX BADGES */
+.badge {
+  background: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.badge.red { color: #ff5a5a !important; }
+.badge.yellow { color: #f5c542 !important; }
+.badge.blue { color: #4caf50 !important; }
+
