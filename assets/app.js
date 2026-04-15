@@ -495,7 +495,7 @@ async function renderOrganizations(){
   const holder=document.getElementById('orgList'); holder.innerHTML='<div class="notice">Загрузка организаций...</div>';
   try{
     const orgs=await api('/api/v1/organizations');
-    if(!orgs.length){holder.innerHTML='<div class="notice">У тебя пока нет организаций. Нажми “Создать новую”.</div>'; return;}
+    if(!orgs.length){holder.innerHTML='<div class="item empty-block"><h3>Пока нет организаций</h3><p class="small">Создай первую организацию, чтобы загрузить товары и увидеть аналитику.</p><a class="btn primary" href="onboarding.html">Создать организацию</a></div>'; return;}
     holder.innerHTML='';
     orgs.forEach(org=>{
       const div=document.createElement('div'); div.className='item';
@@ -584,6 +584,50 @@ function recommendationText(p){
   if(p.stockout_risk === 'high') return `👉 Срочно закажи ${p.reorder_qty} шт.`;
   if(p.stockout_risk === 'medium') return `👉 Проверь закупку: ${p.reorder_qty} шт.`;
   return '✅ Всё стабильно';
+}
+
+function actionLabel(p){
+  if(!p) return 'Открыть';
+  if(p.stockout_risk === 'high' && (p.reorder_qty||0) > 0) return 'Заказать';
+  if(p.stockout_risk === 'medium') return 'Перейти в закупку';
+  return 'Проверить SKU';
+}
+function valueLossText(p){
+  if(!p) return '';
+  const monthlyLoss = Math.max(0, Math.round((Number(p.stock||0) * Number(p.unit_cost||0)) / 3));
+  return monthlyLoss > 0 ? `Вы теряете ~${money(monthlyLoss)} в месяц из-за пересидки товара` : '';
+}
+function coverText(p){
+  return `Хватит на ${Math.round(p.days_of_cover||0)} ${declension(Math.round(p.days_of_cover||0), ['день','дня','дней'])}`;
+}
+function leadTimeText(p){
+  return `при сроке поставки ${p.lead_time_days} ${declension(p.lead_time_days, ['день','дня','дней'])}`;
+}
+
+
+function renderActionButton(p, url='sku.html'){
+  const label = actionLabel(p);
+  return `<button class="btn ghost action-btn" type="button" data-action-label="${label}" data-action-url="${url}" data-action-sku="${p?.sku||''}">${label}</button>`;
+}
+function bindActionButtons(scope=document){
+  scope.querySelectorAll('.action-btn').forEach(btn=>{
+    btn.onclick = (e)=>{
+      e.preventDefault();
+      const label = btn.dataset.actionLabel || 'Проверить SKU';
+      const url = btn.dataset.actionUrl || 'sku.html';
+      const sku = btn.dataset.actionSku || '';
+      if(sku){
+        try{ setSelectedSku(sku); }catch(e){}
+      }
+      if(label === 'Перейти в закупку'){
+        if(window.location.pathname.endsWith('app.html')){
+          const tab = document.querySelector('[data-tab="procurement"]');
+          if(tab){ tab.click(); return; }
+        }
+      }
+      window.location = url;
+    };
+  });
 }
 
 function compareProductRows(currentRows, nextRows){
@@ -677,6 +721,7 @@ async function renderDashboard(){
     const emptyText=document.getElementById('emptyStateText');
     if(emptyTitle) emptyTitle.textContent='Рабочая область создана';
     if(emptyText) emptyText.innerHTML=(s.org.billing_status === 'blocked' ? `Доступ закончился${s.org.paid_until ? ` <strong>${s.org.paid_until}</strong>` : ''}. Чтобы продлить доступ, напишите в <strong>Telegram: @ALeX8nDeRR</strong> или во <strong>ВКонтакте: @sanyok228337</strong>.` : 'Сейчас организация создана без доступа. Разделы <strong>Сегодня</strong>, <strong>Закупки</strong>, <strong>Финансы</strong> и <strong>Команда</strong> появятся после того, как вы напишете в <strong>Telegram: @ALeX8nDeRR</strong> или во <strong>ВКонтакте: @sanyok228337</strong>, а администратор выдаст тариф.');
+    bindActionButtons(document);
     markPageReady();
     return;
   }
@@ -722,12 +767,13 @@ async function renderDashboard(){
       const div=document.createElement('div');
       div.className='item';
       div.innerHTML=`<div class="item-top"><div><h3>${p.stockout_risk!=='low' ? 'Согласовать закупку ' + p.reorder_qty + ' шт.' : 'Проверить восстановление маржи'}</h3>
-    <p class="small">${p.name} · ${p.account}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>${p.stockout_risk!=='low' ? 'Хватит на ' + Math.round(p.days_of_cover) + ' дн. при сроке поставки ' + p.lead_time_days + ' дн.' : 'Вклад в прибыль ' + hiddenMoney(p.contribution_per_unit) + ' на единицу'}</p>`;
+    <p class="small">${p.name} · ${p.account}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>${p.stockout_risk!=='low' ? coverText(p) + ' ' + leadTimeText(p) : 'Вклад в прибыль ' + hiddenMoney(p.contribution_per_unit) + ' на единицу'}</p>`;
       actions.appendChild(div);
     });
     if(!actions.children.length){
-      actions.innerHTML='<div class="success">Сейчас нет критичных действий. По текущим данным ситуация стабильна.</div>';
+      actions.innerHTML='<div class="success">Пока всё спокойно. Когда появится риск по закупкам или марже, здесь будут понятные действия.</div>';
     }
+    bindActionButtons(actions);
 
     const tbody=document.getElementById('productsBody');
     tbody.innerHTML='';
@@ -773,7 +819,8 @@ async function renderDashboard(){
     <p class="small">${p.account} · ${p.sku}</p></div><span class="badge ${state}">${Math.round(p.days_of_cover||0)} дн.</span></div><p>Остаток <strong>${Number(p.stock||0)}</strong> шт. · средние продажи <strong>${Number(p.avg_daily_sales||0).toFixed(1)}</strong> / день · прогноз прибыли 30 дн. <strong>${money(p.forecast_profit_30d)}</strong>.</p><p class="small">Ожидаемая дата риска: <strong>${p.expected_stockout_date || '—'}</strong></p>`;
           forecastList.appendChild(div);
         });
-      if(!forecastList.children.length) forecastList.innerHTML='<div class="item"><p class="small">Прогноз появится после загрузки товаров.</p></div>';
+      if(!forecastList.children.length) forecastList.innerHTML='<div class="item empty-block"><h3>Пока нет прогноза</h3><p class="small">Загрузите товары, и ШТАБ покажет, на сколько дней хватит остатков и сколько можно заработать.</p><a class="btn primary" href="settings.html">Загрузить данные</a></div>';
+      bindActionButtons(forecastList);
     }
 
     const notificationList=document.getElementById('notificationList');
@@ -823,8 +870,9 @@ async function renderDashboard(){
           procurementList.appendChild(div);
         });
         if(!procurementList.children.length){
-          procurementList.innerHTML='<div class="success">По текущим данным срочные закупки не требуются.</div>';
+          procurementList.innerHTML='<div class="success">Срочных закупок пока нет. Как только появится дефицит, здесь появится готовое действие.</div>';
         }
+        bindActionButtons(procurementList);
         const highRiskCount=products.filter(p=>p.stockout_risk==='high').length;
         const mediumRiskCount=products.filter(p=>p.stockout_risk==='medium').length;
         const totalReorder=products.reduce((sum,p)=>sum+(p.reorder_qty||0),0);
@@ -868,12 +916,14 @@ async function renderDashboard(){
             const div=document.createElement('div');
             div.className='item';
             div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
-    <p class="small">${p.account}</p></div><span class="badge amber">Избыточный остаток</span></div><p>Покрытие: <strong>${Math.round(p.days_of_cover)} дн.</strong></p>`;
+    <p class="small">${p.account}</p></div><span class="badge amber">Избыточный остаток</span></div><p>${coverText(p)}</p>`;
             financeCashList.appendChild(div);
           });
         }else{
-          financeCashList.innerHTML='<div class="success">По текущим данным избыточных остатков почти нет.</div>';
+          financeCashList.innerHTML='<div class="success">Лишних остатков почти нет. Деньги не заморожены в товарах.</div>';
         }
+        bindActionButtons(financeMarginList);
+        bindActionButtons(financeCashList);
 
         financeTable.innerHTML='';
         [...products].sort((a,b)=>a.contribution_per_unit-b.contribution_per_unit).forEach(p=>{
@@ -903,8 +953,9 @@ async function renderDashboard(){
           teamMembers.appendChild(div);
         });
         if(!members.length){
-          teamMembers.innerHTML='<div class="notice">В этой организации пока нет участников.</div>';
+          teamMembers.innerHTML='<div class="notice">Команда пока пустая. Добавь первого сотрудника, чтобы делегировать работу.</div>';
         }
+        bindActionButtons(teamMembers);
 
         teamInvites.innerHTML='';
         invites.forEach(inv=>{
@@ -917,6 +968,7 @@ async function renderDashboard(){
         if(!invites.length){
           teamInvites.innerHTML='<div class="success">Открытых приглашений нет.</div>';
         }
+        bindActionButtons(teamInvites);
         if(canUse('audit_log', s.org) && canRole('view_audit', s.org)) await loadAuditLog('teamAuditLog', s.org.id);
       }
     }
@@ -931,7 +983,7 @@ async function renderDashboard(){
         return;
       }catch(_e){}
     }
-    document.getElementById('dashError').innerHTML=`<div class="error">${err.message}</div>`;
+    document.getElementById('dashError').innerHTML=`<div class="error">${err.message || 'Ошибка сервера. Попробуйте позже.'}</div>`;
   }
 }
 
