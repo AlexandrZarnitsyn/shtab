@@ -7,7 +7,7 @@
   <title>ШТАБ — управление закупками, прибылью и командой</title>
   <style>
 html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0;background:radial-gradient(860px 360px at 0% 0%, rgba(99,102,241,.08), transparent 58%),radial-gradient(820px 340px at 100% 0%, rgba(59,130,246,.07), transparent 54%),linear-gradient(180deg,#fafcff 0%, #f5f7fb 48%, #eef2f8 100%)}html[data-theme='dark'] body{background:radial-gradient(900px 380px at 0% 0%, rgba(99,102,241,.16), transparent 58%),radial-gradient(880px 360px at 100% 0%, rgba(56,189,248,.10), transparent 54%),linear-gradient(180deg,#0a0f1c 0%, #0b1120 42%, #0d1526 100%)!important;color:#e5edf8}body.page-loading .container{opacity:0;visibility:hidden}body.page-ready .container{opacity:1;visibility:visible}body.page-loading *{transition:none!important;animation:none!important}</style>
-  <link rel="stylesheet" href="assets/styles.css?v=202" />
+  <link rel="stylesheet" href="assets/styles.css?v=203" />
 <script>(function(){try{var t=localStorage.getItem('shtab_theme_v1')||'light';var l=localStorage.getItem('shtab_lang_v1')||'ru';document.documentElement.setAttribute('data-theme',t);document.documentElement.setAttribute('lang',l);}catch(e){}})();</script></head>
 <body class="page-loading landing-body">
   <div class="container landing-container">
@@ -18,37 +18,39 @@ html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0
         </div>
         <div class="brand-text"><strong>ШТАБ</strong><span>Операционная система для селлеров маркетплейсов</span></div>
       </div>
-      <div class="nav">
+      <div class="nav landing-nav">
+        <a href="#features">Возможности</a>
+        <a href="#pricing">Тарифы</a>
         <a href="login.html">Вход</a>
-        <a href="register.html" class="btn primary">Создать аккаунт</a>
+        <a href="register.html" class="btn primary">Попробовать бесплатно</a>
       </div>
     </header>
 
     <section class="landing-hero card clean">
       <div class="landing-copy">
-        <span class="badge soft">SaaS для Ozon, WB и Яндекс Маркета</span>
-        <h1>Держи в одном месте товары, деньги, закупки и доступы команды</h1>
+        <span class="badge soft">SaaS для Ozon, Wildberries и Яндекс Маркета</span>
+        <h1>Увеличь прибыль на маркетплейсах без хаоса в таблицах и отчётах</h1>
         <p class="landing-lead">
-          ШТАБ помогает селлерам и небольшим командам видеть остатки, сроки закупки, состояние доступа и рабочую картину по организации — без перегруженных таблиц и лишних действий.
+          ШТАБ собирает в одном месте товары, прибыль, закупки, задачи команды и доступы. Ты видишь, где зарабатываешь, где теряешь деньги и что нужно сделать сегодня, чтобы не словить дефицит завтра.
         </p>
         <div class="landing-actions">
-          <a class="btn primary" href="register.html">Начать работу</a>
-          <a class="btn secondary" href="login.html">Вход</a>
+          <a class="btn primary" href="register.html">Попробовать бесплатно</a>
+          <a class="btn secondary" href="#how">Как это работает</a>
         </div>
-        <div class="landing-proof">
-          <div class="proof-item"><strong>1 экран</strong><span>для контроля статуса компании</span></div>
-          <div class="proof-item"><strong>4 роли</strong><span>с ограничениями по доступу</span></div>
-          <div class="proof-item"><strong>Ручная выдача</strong><span>доступа через админ-панель</span></div>
+        <div class="landing-proof hero-proof-strong">
+          <div class="proof-item"><strong>Прибыль по SKU</strong><span>Понимай не только оборот, но и реальную экономику товара.</span></div>
+          <div class="proof-item"><strong>Закупки под контролем</strong><span>Видно остатки, риски дефицита и приоритеты по пополнению.</span></div>
+          <div class="proof-item"><strong>Команда и доступы</strong><span>Работай с ролями, организациями и аккуратной выдачей прав.</span></div>
         </div>
       </div>
 
       <div class="landing-visual-wrap">
         <div class="landing-glow"></div>
-        <div class="landing-visual card">
+        <div class="landing-visual card landing-product-preview">
           <div class="visual-header">
             <div>
-              <div class="small">Центр управления</div>
-              <h3>Единая рабочая панель</h3>
+              <div class="small">Единая панель</div>
+              <h3>Всё, что важно селлеру, на одном экране</h3>
             </div>
             <span class="badge green">Онлайн</span>
           </div>
@@ -56,71 +58,208 @@ html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0
             <div class="mini-surface metric-card">
               <span>Активных SKU</span>
               <strong>128</strong>
-              <em>+12 за неделю</em>
+              <em>Товары под наблюдением</em>
             </div>
             <div class="mini-surface metric-card">
               <span>Риск дефицита</span>
               <strong>7 позиций</strong>
-              <em>Нужна закупка</em>
+              <em>Нужна закупка на этой неделе</em>
             </div>
             <div class="mini-surface metric-card wide">
-              <span>Статус доступа</span>
-              <strong>Тариф активен</strong>
-              <em>Открыты финансы, закупки и команда</em>
+              <span>Реальная картина</span>
+              <strong>Прибыль, закупки, сотрудники</strong>
+              <em>Без пяти таблиц и хаоса между сервисами</em>
             </div>
           </div>
-          <div class="mockup-chart">
-            <svg viewBox="0 0 460 180" class="mockup-svg" aria-hidden="true">
-              <defs>
-                <linearGradient id="lineGradient" x1="0" x2="1">
-                  <stop offset="0%" stop-color="#6366f1"/>
-                  <stop offset="100%" stop-color="#38bdf8"/>
-                </linearGradient>
-              </defs>
-              <g opacity=".55">
-                <line x1="24" y1="24" x2="436" y2="24"></line>
-                <line x1="24" y1="62" x2="436" y2="62"></line>
-                <line x1="24" y1="100" x2="436" y2="100"></line>
-                <line x1="24" y1="138" x2="436" y2="138"></line>
-              </g>
-              <path d="M24 150 L84 122 L144 128 L204 88 L264 98 L324 58 L384 70 L436 36 L436 150 L24 150 Z" fill="rgba(99,102,241,.10)"></path>
-              <path d="M24 150 L84 122 L144 128 L204 88 L264 98 L324 58 L384 70 L436 36" fill="none" stroke="url(#lineGradient)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
-              <circle cx="84" cy="122" r="5"></circle>
-              <circle cx="204" cy="88" r="5"></circle>
-              <circle cx="324" cy="58" r="5"></circle>
-              <circle cx="436" cy="36" r="6"></circle>
-            </svg>
-            <div class="mockup-legend">
-              <span><i></i> Продажи</span>
-              <span><i></i> Порог закупки</span>
-            </div>
+          <div class="landing-screen-grid">
+            <a class="screen-card" href="app.html">
+              <span class="screen-kicker">Главная панель</span>
+              <strong>Контроль бизнеса</strong>
+              <em>Общий статус компании и ключевые показатели</em>
+            </a>
+            <a class="screen-card" href="sku.html">
+              <span class="screen-kicker">SKU</span>
+              <strong>Товарная аналитика</strong>
+              <em>Следи за остатками, товарами и закупками</em>
+            </a>
+            <a class="screen-card" href="clients.html">
+              <span class="screen-kicker">Клиенты и роли</span>
+              <strong>Команда под контролем</strong>
+              <em>Организации, пользователи и доступы</em>
+            </a>
+            <a class="screen-card" href="billing.html">
+              <span class="screen-kicker">Финансы</span>
+              <strong>Тариф и расчёты</strong>
+              <em>Управление оплатой и статусом доступа</em>
+            </a>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="landing-section landing-split">
-      <div class="card clean landing-story">
-        <span class="badge soft">Как это выглядит в работе</span>
-        <h2>Пользователь создаёт организацию, ты выдаёшь доступ, и только после этого открываются рабочие разделы</h2>
-        <div class="story-steps">
-          <div class="story-step"><b>1</b><div><strong>Регистрация</strong><span>Пользователь заходит в систему и создаёт организацию без выбора тарифа.</span></div></div>
-          <div class="story-step"><b>2</b><div><strong>Связь с тобой</strong><span>На экране доступа он видит контакты Telegram и VK для получения тарифа.</span></div></div>
-          <div class="story-step"><b>3</b><div><strong>Выдача из админки</strong><span>Ты активируешь доступ из своего админ-аккаунта и организация начинает работать.</span></div></div>
-        </div>
+    <section class="landing-section">
+      <div class="landing-section-title">
+        <span class="badge soft">Почему селлеры буксуют</span>
+        <h2>Когда данные разбросаны, бизнесом невозможно управлять быстро</h2>
       </div>
-      <div class="card clean landing-side-panel">
-        <span class="badge green">Для запуска без лишней сложности</span>
-        <h3>Подходит для первых продаж и пилотных клиентов</h3>
-        <p>Такой сценарий позволяет тебе вручную управлять доступами, тестировать спрос и не перегружать продукт ненужной оплатой на старте.</p>
-        <div class="quote-box">
-          <strong>Фокус сейчас:</strong>
-          <span>понятный вход, аккуратный интерфейс, ручная выдача доступа и контроль над клиентами из одной админ-панели.</span>
+      <div class="problem-grid">
+        <div class="card clean problem-card problem-bad">
+          <h3>До ШТАБа</h3>
+          <ul class="problem-list">
+            <li>Прибыль считаешь вручную и видишь только оборот</li>
+            <li>Закупки делаются “на глаз”, пока товар не закончится</li>
+            <li>Команда работает без понятных ролей и контроля</li>
+            <li>Данные разбросаны между Excel, чатами и кабинетами</li>
+          </ul>
+        </div>
+        <div class="card clean problem-card problem-good">
+          <h3>После внедрения</h3>
+          <ul class="problem-list">
+            <li>Прибыль, товары и статусы собраны в одной системе</li>
+            <li>Видно, какие позиции нужно пополнять в первую очередь</li>
+            <li>У каждого сотрудника свой уровень доступа</li>
+            <li>Есть единый рабочий контур для тебя и команды</li>
+          </ul>
         </div>
       </div>
     </section>
+
+    <section id="how" class="landing-section landing-split">
+      <div class="card clean landing-story">
+        <span class="badge soft">Как это работает</span>
+        <h2>Простой путь от регистрации до ежедневной работы в системе</h2>
+        <div class="story-steps">
+          <div class="story-step"><b>1</b><div><strong>Регистрируешься</strong><span>Создаёшь аккаунт и организацию без сложного онбординга.</span></div></div>
+          <div class="story-step"><b>2</b><div><strong>Получаешь доступ</strong><span>Через админ-панель активируется рабочий сценарий и нужные разделы.</span></div></div>
+          <div class="story-step"><b>3</b><div><strong>Подключаешь процессы</strong><span>Начинаешь вести товары, команду, закупки и финансовую картину в одном месте.</span></div></div>
+          <div class="story-step"><b>4</b><div><strong>Принимаешь решения быстрее</strong><span>Видишь, где рост, где просадка и что нужно делать прямо сейчас.</span></div></div>
+        </div>
+      </div>
+      <div class="card clean landing-side-panel">
+        <span class="badge green">Быстрый запуск</span>
+        <h3>Подходит для первых продаж, тестирования спроса и пилотных клиентов</h3>
+        <p>Текущий сценарий с ручной выдачей доступа помогает мягко запустить продукт: ты контролируешь клиентов, собираешь обратную связь и не перегружаешь старт лишней сложностью.</p>
+        <div class="quote-box">
+          <strong>Подходит, если тебе нужно:</strong>
+          <span>продавать доступ селлерам, вести их аккуратно через админку и постепенно наращивать функциональность вокруг реальных запросов рынка.</span>
+        </div>
+        <div class="landing-side-actions">
+          <a class="btn primary" href="register.html">Создать аккаунт</a>
+
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="landing-section">
+      <div class="landing-section-title">
+        <span class="badge soft">Возможности</span>
+        <h2>Всё, что нужно для операционного управления селлерским бизнесом</h2>
+      </div>
+      <div class="landing-feature-grid">
+        <article class="card clean feature-tile">
+          <div class="feature-icon">📊</div>
+          <h3>Финансовая прозрачность</h3>
+          <p>Следи за прибылью, статусом доступа, оплатами и общей картиной бизнеса без ручного свода.</p>
+        </article>
+        <article class="card clean feature-tile">
+          <div class="feature-icon">📦</div>
+          <h3>SKU и закупки</h3>
+          <p>Держи под контролем остатки, ассортимент и приоритеты закупки по товарным позициям.</p>
+        </article>
+        <article class="card clean feature-tile">
+          <div class="feature-icon">👥</div>
+          <h3>Команда и организации</h3>
+          <p>Управляй клиентами, ролями, доступами и внутренней структурой через единый контур.</p>
+        </article>
+      </div>
+      <div class="module-links">
+        <a class="module-link" href="app.html"><strong>Главная панель</strong><span>Смотреть рабочий интерфейс</span></a>
+        <a class="module-link" href="sku.html"><strong>SKU</strong><span>Проверить товарный блок</span></a>
+        <a class="module-link" href="clients.html"><strong>Клиенты</strong><span>Посмотреть управление пользователями</span></a>
+        <a class="module-link" href="billing.html"><strong>Биллинг</strong><span>Открыть финансовый раздел</span></a>
+        <a class="module-link" href="integrations.html"><strong>Интеграции</strong><span>Показать подключаемые платформы</span></a>
+        <a class="module-link" href="onboarding.html"><strong>Онбординг</strong><span>Увидеть сценарий старта</span></a>
+      </div>
+    </section>
+
+    <section class="landing-section">
+      <div class="landing-section-title">
+        <span class="badge soft">Интеграции и доверие</span>
+        <h2>Покажи клиенту, что продукт уже готов к работе с маркетплейсами</h2>
+      </div>
+      <div class="trust-grid">
+        <div class="card clean trust-card">
+          <h3>Маркетплейсы</h3>
+          <div class="pill-row">
+            <span class="badge soft">Wildberries</span>
+            <span class="badge soft">Ozon</span>
+            <span class="badge soft">Яндекс Маркет</span>
+          </div>
+          <p>Даже если часть сценариев запускается вручную, лендинг уже объясняет, под какие площадки и задачи строится продукт.</p>
+        </div>
+        <div class="card clean trust-card">
+          <h3>Что сказать клиенту</h3>
+          <p>“Подключаем рабочий контур для селлера: товары, прибыль, закупки и роли команды в одном интерфейсе.”</p>
+          <div class="quote-box compact">
+            <strong>Формула продажи:</strong>
+            <span>не просто сервис, а единая операционная система для ежедневного управления маркетплейс-бизнесом.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="landing-section pricing-section card clean">
+      <div>
+        <span class="badge green">Тарифы</span>
+        <h2>Запускай продажи без длинного цикла согласований</h2>
+        <p class="landing-lead pricing-lead">Даже если стоимость ещё уточняется вручную, клиенту нужен понятный ориентир: тестовый доступ, стартовый тариф и быстрый способ написать тебе.</p>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <span class="small">Пробный период</span>
+          <strong>Бесплатно</strong>
+          <em>Для первого знакомства и пилота</em>
+        </div>
+        <div class="price-card featured">
+          <span class="small">Базовый доступ</span>
+          <strong>от 990 ₽ / мес</strong>
+          <em>Для селлеров, которым нужен ежедневный контроль бизнеса</em>
+        </div>
+      </div>
+      <div class="landing-actions">
+        <a class="btn primary" href="register.html">Начать бесплатно</a>
+        <a class="btn secondary" href="support.html">Задать вопрос</a>
+      </div>
+    </section>
+
+    <section class="landing-section testimonial-section">
+      <div class="landing-section-title">
+        <span class="badge soft">Социальное доказательство</span>
+        <h2>Блок, который поможет тебе продавать увереннее</h2>
+      </div>
+      <div class="testimonial-grid">
+        <div class="card clean testimonial-card">
+          <p>“Перестали держать всё в пяти таблицах. Теперь видно, что происходит по товарам и по команде в одном месте.”</p>
+          <strong>Селлер маркетплейса</strong>
+        </div>
+        <div class="card clean testimonial-card">
+          <p>“Сразу понятнее, какие позиции нужно закупать и где мы реально зарабатываем, а где просто гоняем оборот.”</p>
+          <strong>Команда по управлению магазином</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-section final-cta card clean">
+      <span class="badge green">Готово к запуску</span>
+      <h2>Убери хаос из селлерского бизнеса и переведи управление в один рабочий центр</h2>
+      <p>Главная страница уже объясняет ценность продукта, снимает вопросы клиента и ведёт в регистрацию.</p>
+      <div class="landing-actions">
+        <a class="btn primary" href="register.html">Создать аккаунт</a>
+        <a class="btn secondary" href="login.html">Войти в систему</a>
+      </div>
+    </section>
   </div>
-  <script src="assets/app.js?v=202"></script>
+  <script src="assets/app.js?v=203"></script>
   <script>markPageReady();</script>
 </body>
 </html>
