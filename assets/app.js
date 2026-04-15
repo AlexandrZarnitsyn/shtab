@@ -2,7 +2,7 @@
 const API_BASE =
   window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
     ? "http://127.0.0.1:8000"
-    : "/api";
+    : "";
 const SESSION_KEY='shtab_backend_session_v1';
 const SUPERADMIN_EMAIL='s.zarnitsyn@yandex.ru';
 
