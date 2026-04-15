@@ -35,3 +35,23 @@ body{background:
   padding: 0 !important;
 }
 
+
+
+/* ULTRA CLEAN TEXT ONLY */
+.badge, .status, .label, .tag, .chip, .pill {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* remove pseudo elements if any */
+.badge::before, .badge::after,
+.status::before, .status::after,
+.label::before, .label::after {
+  content: none !important;
+  display: none !important;
+}
+
