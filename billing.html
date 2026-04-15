@@ -8,7 +8,7 @@ html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0
   <div class="card clean contact-card">
     <div class="page-head">
       <div><h1 style="margin-top:0">Доступ выдаётся только администратором</h1><p>Самостоятельный выбор тарифа для пользователей отключён. Чтобы открыть рабочие разделы, напишите администратору и дождитесь активации доступа.</p></div>
-      <div class="actions"><button class="btn secondary" id="refreshBilling">Обновить статус</button><a class="btn secondary" href="admin.html" id="goToAdmin" style="display:none">Открыть админку</a><button class="btn primary" id="goToApp" style="display:none">Перейти в панель</button></div>
+      <div class="actions"><button class="btn secondary" id="refreshBilling">Обновить статус</button><button class="btn primary" id="goToApp" style="display:none">Перейти в панель</button></div>
     </div>
     <div id="billingStatusBox" class="notice">Загрузка состояния организации...</div>
     <div class="contact-list">
@@ -41,7 +41,6 @@ html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0
   const statusBox = document.getElementById('billingStatusBox');
   const accessMeta = document.getElementById('accessMeta');
   const goToApp = document.getElementById('goToApp');
-  const goToAdmin = document.getElementById('goToAdmin');
   let currentOrg = s.org;
   function renderStatus(org){
     const statusLabel = org.billing_status === 'active' ? 'Доступ активен' : org.billing_status === 'blocked' ? 'Доступ закончился' : 'Ожидает выдачи доступа';
@@ -60,7 +59,6 @@ html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0
       accessMeta.appendChild(div);
     });
     goToApp.style.display = org.billing_status === 'active' ? '' : 'none';
-    if(goToAdmin) goToAdmin.style.display = isSuperAdmin(getSession()) ? '' : 'none';
   }
   async function reloadOrg(){
     const orgs = await api('/api/v1/organizations');
@@ -71,7 +69,6 @@ html{background:#f5f7fb}html[data-theme='dark']{background:#0b1120}body{margin:0
   }
   document.getElementById('refreshBilling').onclick = reloadOrg;
   document.getElementById('goToApp').onclick = ()=>window.location='app.html';
-  if(goToAdmin) goToAdmin.onclick=(e)=>{ e.preventDefault(); window.location='admin.html'; };
   await reloadOrg();
   markPageReady();
 })();
