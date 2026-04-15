@@ -501,7 +501,6 @@ async function renderOrganizations(){
       const div=document.createElement('div'); div.className='item';
       const openLabel = org.billing_status === 'active' ? 'Открыть' : 'Рабочая область';
       div.innerHTML=`<div class="item-top"><div><h3>${org.name}</h3>
-    <button class="btn ghost action-btn">Действие</button>
     <p class="small">Тариф: ${formatTariff(org.tariff_code)} · Роль: ${org.current_role || '—'} · Основной маркетплейс: ${org.marketplace||'—'}</p></div><span class="badge ${billingStatusClass(org)}">${billingStatusLabel(org)}</span></div><div class="actions">${billingNoticeHtml(org)}<button class="btn primary" data-open>${openLabel}</button><button class="btn secondary" data-settings>Настройки</button></div>`;
       div.querySelector('[data-open]').onclick=()=>{setSession({...getSession(), org}); window.location = 'app.html';};
       div.querySelector('[data-settings]').onclick=()=>{setSession({...getSession(), org}); window.location='settings.html';};
@@ -618,14 +617,12 @@ function renderDiffPreview(diff){
   holder.style.display='block';
   const topFields=Object.entries(diff.changed_fields||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
   holder.innerHTML = `<div class="item"><div class="item-top"><div><h3>Сравнение с текущими данными</h3>
-    <button class="btn ghost action-btn">Действие</button>
     <p class="small">Перед заменой видно, что именно изменится в организации.</p></div><span class="badge soft">Предпросмотр</span></div><div class="mini-stat-row" style="margin-top:12px"><div class="mini-stat"><div class="small">Новых SKU</div><div style="font-weight:800;margin-top:8px">${diff.added_count||0}</div></div><div class="mini-stat"><div class="small">Обновится SKU</div><div style="font-weight:800;margin-top:8px">${diff.updated_count||0}</div></div><div class="mini-stat"><div class="small">Удалится SKU</div><div style="font-weight:800;margin-top:8px">${diff.removed_count||0}</div></div></div></div>`;
   if(topFields.length){
     const div=document.createElement('div');
     div.className='item';
     div.innerHTML = `<h3>Чаще всего меняются поля</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${topFields.map(([name,count])=>`${name}: ${count}`).join(' · ')} + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${topFields.map(([name,count])=>`${name}: ${count}`).join(' · ')}</p>`;
     holder.appendChild(div);
   }
 }
@@ -641,7 +638,6 @@ async function loadAuditLog(holderId, organizationId){
       div.className='item';
       const actor = item.actor_name ? `${item.actor_name} · ${item.actor_email}` : (item.actor_email || 'Система');
       div.innerHTML = `<div class="item-top"><div><h3>${item.action}</h3>
-    <button class="btn ghost action-btn">Действие</button>
     <p class="small">${fmtDate(item.created_at)} · ${actor}</p></div><span class="badge soft">${item.entity_type}</span></div>`;
       holder.appendChild(div);
     });
@@ -726,8 +722,7 @@ async function renderDashboard(){
       const div=document.createElement('div');
       div.className='item';
       div.innerHTML=`<div class="item-top"><div><h3>${p.stockout_risk!=='low' ? 'Согласовать закупку ' + p.reorder_qty + ' шт.' : 'Проверить восстановление маржи'}</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${p.name} · ${p.account}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>${p.stockout_risk!=='low' ? 'Хватит на ' + Math.round(p.days_of_cover) + ' дн. при сроке поставки ' + p.lead_time_days + ' дн.' : 'Вклад в прибыль ' + hiddenMoney(p.contribution_per_unit) + ' на единицу'} + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${p.name} · ${p.account}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>${p.stockout_risk!=='low' ? 'Хватит на ' + Math.round(p.days_of_cover) + ' дн. при сроке поставки ' + p.lead_time_days + ' дн.' : 'Вклад в прибыль ' + hiddenMoney(p.contribution_per_unit) + ' на единицу'}</p>`;
       actions.appendChild(div);
     });
     if(!actions.children.length){
@@ -775,8 +770,7 @@ async function renderDashboard(){
           div.className='item';
           const state = (p.days_of_cover||0) <= 7 ? 'red' : (p.days_of_cover||0) <= 14 ? 'amber' : 'soft';
           div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${p.account} · ${p.sku}</p></div><span class="badge ${state}">${Math.round(p.days_of_cover||0)} дн.</span></div><p>Остаток <strong>${Number(p.stock||0)}</strong> шт. · средние продажи <strong>${Number(p.avg_daily_sales||0).toFixed(1)}</strong> / день · прогноз прибыли 30 дн. <strong>${money(p.forecast_profit_30d)}</strong>.</p><p class="small">Ожидаемая дата риска: <strong>${p.expected_stockout_date || '—'}</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${p.account} · ${p.sku}</p></div><span class="badge ${state}">${Math.round(p.days_of_cover||0)} дн.</span></div><p>Остаток <strong>${Number(p.stock||0)}</strong> шт. · средние продажи <strong>${Number(p.avg_daily_sales||0).toFixed(1)}</strong> / день · прогноз прибыли 30 дн. <strong>${money(p.forecast_profit_30d)}</strong>.</p><p class="small">Ожидаемая дата риска: <strong>${p.expected_stockout_date || '—'}</strong></p>`;
           forecastList.appendChild(div);
         });
       if(!forecastList.children.length) forecastList.innerHTML='<div class="item"><p class="small">Прогноз появится после загрузки товаров.</p></div>';
@@ -795,7 +789,6 @@ async function renderDashboard(){
       });
       notes.sort((a,b)=>(a.sort||9)-(b.sort||9));
       notes.slice(0,10).forEach(n=>{ const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${n.title}</h3>
-    <button class="btn ghost action-btn">Действие</button>
     <p class="small">${n.body}</p></div><span class="badge ${n.level==='red'?'red':'amber'}">${n.level==='red'?'Срочно':'Контроль'}</span></div>`; notificationList.appendChild(div); });
       if(!notificationList.children.length) notificationList.innerHTML='<div class="success">Критичных уведомлений по текущим данным нет.</div>';
     }
@@ -825,8 +818,7 @@ async function renderDashboard(){
           const div=document.createElement('div');
           div.className='item';
           div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${p.account} · ${p.warehouse}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>Рекомендуемый объём дозакупки: <strong>${p.reorder_qty} шт.</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${p.account} · ${p.warehouse}</p></div><span class="badge ${riskClass(p.stockout_risk)}">${riskLabel(p.stockout_risk)}</span></div><p>Рекомендуемый объём дозакупки: <strong>${p.reorder_qty} шт.</strong></p>`;
           if(canUse('sku_details', s.org)){ div.style.cursor='pointer'; div.onclick=()=>{ setSelectedSku(p.sku); window.location='sku.html'; }; }
           procurementList.appendChild(div);
         });
@@ -864,8 +856,7 @@ async function renderDashboard(){
           const div=document.createElement('div');
           div.className='item';
           div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${p.account}</p></div><span class="badge ${bad?'red':'soft'}">${bad?'Низкая маржа':'Норма'}</span></div><p>Вклад в прибыль: <strong>${money(p.contribution_per_unit)}</strong> на единицу + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${p.account}</p></div><span class="badge ${bad?'red':'soft'}">${bad?'Низкая маржа':'Норма'}</span></div><p>Вклад в прибыль: <strong>${money(p.contribution_per_unit)}</strong> на единицу</p>`;
           if(canUse('sku_details', s.org)){ div.style.cursor='pointer'; div.onclick=()=>{ setSelectedSku(p.sku); window.location='sku.html'; }; }
           financeMarginList.appendChild(div);
         });
@@ -877,8 +868,7 @@ async function renderDashboard(){
             const div=document.createElement('div');
             div.className='item';
             div.innerHTML=`<div class="item-top"><div><h3>${p.name}</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${p.account}</p></div><span class="badge amber">Избыточный остаток</span></div><p>Покрытие: <strong>${Math.round(p.days_of_cover)} дн.</strong> + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${p.account}</p></div><span class="badge amber">Избыточный остаток</span></div><p>Покрытие: <strong>${Math.round(p.days_of_cover)} дн.</strong></p>`;
             financeCashList.appendChild(div);
           });
         }else{
@@ -909,8 +899,7 @@ async function renderDashboard(){
           const div=document.createElement('div');
           div.className='item';
           div.innerHTML=`<div class="item-top"><div><h3>${m.full_name}</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${m.email}</p></div><span class="badge soft">${m.role}</span></div><p class="small">${m.status} + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">${m.email}</p></div><span class="badge soft">${m.role}</span></div><p class="small">${m.status}</p>`;
           teamMembers.appendChild(div);
         });
         if(!members.length){
@@ -922,7 +911,6 @@ async function renderDashboard(){
           const div=document.createElement('div');
           div.className='item';
           div.innerHTML=`<div class="item-top"><div><h3>${inv.email}</h3>
-    <button class="btn ghost action-btn">Действие</button>
     <p class="small">${inv.status}</p></div><span class="badge amber">${inv.role}</span></div>`;
           teamInvites.appendChild(div);
         });
@@ -1001,10 +989,8 @@ async function renderSettings(){
       const members=await api(`/api/v1/members?organization_id=${s.org.id}`);
       const invites=await api(`/api/v1/invites?organization_id=${s.org.id}`);
       const mh=document.getElementById('members'); if(mh){ mh.innerHTML=''; members.forEach(m=>{const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${m.full_name}</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">${m.email}</p></div><span class="badge soft">${m.role}</span></div><p class="small">${m.status} + `<p class="recommend">${recommendationText(p)}</p>`; mh.appendChild(div);}); if(!members.length){mh.innerHTML='<div class="item"><p class="small">В команде пока только владелец организации.</p></div>';}}
+    <p class="small">${m.email}</p></div><span class="badge soft">${m.role}</span></div><p class="small">${m.status}</p>`; mh.appendChild(div);}); if(!members.length){mh.innerHTML='<div class="item"><p class="small">В команде пока только владелец организации.</p></div>';}}
       const ih=document.getElementById('invites'); if(ih){ ih.innerHTML=''; invites.forEach(inv=>{const div=document.createElement('div'); div.className='item'; div.innerHTML=`<div class="item-top"><div><h3>${inv.email}</h3>
-    <button class="btn ghost action-btn">Действие</button>
     <p class="small">${inv.status}</p></div><span class="badge amber">${inv.role}</span></div>`; ih.appendChild(div);}); if(!invites.length){ih.innerHTML='<div class="item"><p class="small">Приглашений пока нет.</p></div>';}}
     }
     if(canUse('import_history', s.org)){
@@ -1018,8 +1004,7 @@ async function renderSettings(){
           const whoText = record.imported_by_name ? `${record.imported_by_name} · ${record.imported_by_email}` : (record.imported_by_email || '—');
           const changeText = `Новых: ${record.added_count||0} · Обновлено: ${record.updated_count||0} · Удалено: ${record.removed_count||0}`;
           div.innerHTML=`<div class="item-top"><div><h3>${dt.toLocaleString('ru-RU')}</h3>
-    <button class="btn ghost action-btn">Действие</button>
-    <p class="small">Импортировал: ${whoText}</p></div><span class="badge soft">${record.mode}</span></div><p class="small">Строк: ${record.row_count} · ${changeText} + `<p class="recommend">${recommendationText(p)}</p>`;
+    <p class="small">Импортировал: ${whoText}</p></div><span class="badge soft">${record.mode}</span></div><p class="small">Строк: ${record.row_count} · ${changeText}</p>`;
           historyList.appendChild(div);
         });
         if(!history.length){ historyList.innerHTML='<div class="item"><p class="small">История импортов пока пуста.</p></div>'; }
@@ -1105,7 +1090,7 @@ async function renderSkuDetails(){
     recommendations.forEach(text=>{
       const div=document.createElement('div');
       div.className='item';
-      div.innerHTML=`<p>${text} + `<p class="recommend">${recommendationText(p)}</p>`;
+      div.innerHTML=`<p>${text}</p>`;
       recHolder.appendChild(div);
     });
 
@@ -1144,7 +1129,6 @@ async function renderInviteAccept(){
   try{
     const invite=await api(`/api/v1/invites/public?token=${encodeURIComponent(token)}`, {headers:{}});
     holder.innerHTML = `<div class="item"><div class="item-top"><div><h3>${invite.organization_name}</h3>
-    <button class="btn ghost action-btn">Действие</button>
     <p class="small">Приглашён: ${invite.email}</p></div><span class="badge amber">${invite.role}</span></div><p class="small">Статус: ${invite.status}. Создано: ${fmtDate(invite.created_at)}</p></div>`;
     const btn=document.getElementById('acceptInviteBtn');
     if(btn){
