@@ -173,7 +173,7 @@ const PARTIAL_TRANSLATIONS = {
     'прибыль ': 'profit ',
     'Прогноз появится после загрузки товаров.': 'The forecast will appear after products are loaded.',
     'Закупка: ': 'Restock: ',
-    'Остатка хватит примерно на ': 'Stock will last for about ',
+    'Хватит примерно на ': 'Stock will last for about ',
     'ожидаемая дата риска — ': 'estimated risk date — ',
     'Маржа: ': 'Margin: ',
     'Стоит проверить цену ': 'Review price ',
@@ -370,6 +370,15 @@ function money(n){const locale=getLanguagePreference()==='en'?'en-US':'ru-RU'; r
 function pct(n,d=1){const raw=Number(n||0).toFixed(d); return `${getLanguagePreference()==='en'?raw:raw.replace('.',',')}%`;}
 function ratio(n,d=2){ if(n==null) return '—'; const raw=Number(n).toFixed(d); return `${getLanguagePreference()==='en'?raw:raw.replace('.',',')}x`; }
 function fmtDate(value){ if(!value) return '—'; const dt=new Date(value); const locale=getLanguagePreference()==='en'?'en-US':'ru-RU'; return Number.isNaN(dt.getTime()) ? value : dt.toLocaleString(locale); }
+
+function declension(number, words){
+  number = Math.abs(Number(number) || 0) % 100;
+  const n1 = number % 10;
+  if(number > 10 && number < 20) return words[2];
+  if(n1 > 1 && n1 < 5) return words[1];
+  if(n1 === 1) return words[0];
+  return words[2];
+}
 function getSession(){const raw=localStorage.getItem(SESSION_KEY); return raw?JSON.parse(raw):{token:null,user:null,org:null};}
 function setSession(next){localStorage.setItem(SESSION_KEY, JSON.stringify(next));}
 async function clearSession(){try{await api('/api/v1/auth/logout',{method:'POST'});}catch{} localStorage.removeItem(SESSION_KEY); window.location='index.html';}
@@ -586,6 +595,23 @@ function recommendationText(p){
   return '✅ Всё стабильно';
 }
 
+
+function smartActionData(p){
+  if(!p) return {label:'Проверить SKU', url:'sku.html'};
+  if(p.stockout_risk === 'high' && (p.reorder_qty||0) > 0) return {label:'Заказать', url:'app.html', tab:'procurement'};
+  if(p.stockout_risk === 'medium') return {label:'Перейти в закупку', url:'app.html', tab:'procurement'};
+  return {label:'Проверить SKU', url:'sku.html'};
+}
+function estimatedLossValue(p){
+  const stock = Number(p?.stock || 0);
+  const unitCost = Number(p?.unit_cost || p?.unitCost || 0);
+  const cover = Number(p?.days_of_cover || 0);
+  if(!stock || !unitCost) return 0;
+  const overstockDays = Math.max(0, cover - 35);
+  const freezeShare = Math.min(0.8, overstockDays / 60);
+  return Math.round(stock * unitCost * freezeShare);
+}
+
 function actionLabel(p){
   if(!p) return 'Открыть';
   if(p.stockout_risk === 'high' && (p.reorder_qty||0) > 0) return 'Заказать';
@@ -594,8 +620,8 @@ function actionLabel(p){
 }
 function valueLossText(p){
   if(!p) return '';
-  const monthlyLoss = Math.max(0, Math.round((Number(p.stock||0) * Number(p.unit_cost||0)) / 3));
-  return monthlyLoss > 0 ? `Вы теряете ~${money(monthlyLoss)} в месяц из-за пересидки товара` : '';
+  const loss = estimatedLossValue(p);
+  return loss > 0 ? `Вы теряете ~${money(loss)} в месяц из-за пересидки товара` : '';
 }
 function coverText(p){
   return `Хватит на ${Math.round(p.days_of_cover||0)} ${declension(Math.round(p.days_of_cover||0), ['день','дня','дней'])}`;
@@ -605,9 +631,9 @@ function leadTimeText(p){
 }
 
 
-function renderActionButton(p, url='sku.html'){
-  const label = actionLabel(p);
-  return `<button class="btn ghost action-btn" type="button" data-action-label="${label}" data-action-url="${url}" data-action-sku="${p?.sku||''}">${label}</button>`;
+function renderActionButton(p){
+  const action = smartActionData(p);
+  return `<button class="btn ghost action-btn" type="button" data-action-label="${action.label}" data-action-url="${action.url}" data-action-tab="${action.tab||''}" data-action-sku="${p?.sku||''}">${action.label}</button>`;
 }
 function bindActionButtons(scope=document){
   scope.querySelectorAll('.action-btn').forEach(btn=>{
@@ -616,10 +642,11 @@ function bindActionButtons(scope=document){
       const label = btn.dataset.actionLabel || 'Проверить SKU';
       const url = btn.dataset.actionUrl || 'sku.html';
       const sku = btn.dataset.actionSku || '';
+      const tabName = btn.dataset.actionTab || '';
       if(sku){
         try{ setSelectedSku(sku); }catch(e){}
       }
-      if(label === 'Перейти в закупку'){
+      if(tabName === 'procurement'){
         if(window.location.pathname.endsWith('app.html')){
           const tab = document.querySelector('[data-tab="procurement"]');
           if(tab){ tab.click(); return; }
@@ -771,7 +798,7 @@ async function renderDashboard(){
       actions.appendChild(div);
     });
     if(!actions.children.length){
-      actions.innerHTML='<div class="success">Пока всё спокойно. Когда появится риск по закупкам или марже, здесь будут понятные действия.</div>';
+      actions.innerHTML='<div class="success">Пока всё спокойно. Когда появится риск по закупкам или марже, здесь появятся готовые действия.</div>';
     }
     bindActionButtons(actions);
 
@@ -828,7 +855,7 @@ async function renderDashboard(){
       notificationList.innerHTML='';
       const notes=[];
       products.forEach(p=>{
-        if((p.days_of_cover||0)<=7) notes.push({title:`Закупка: ${p.sku}`, body:`Остатка хватит примерно на ${Math.round(p.days_of_cover)} дн. При текущих продажах нужен заказ около ${p.reorder_qty||0} шт.`, level:'red', sort:1});
+        if((p.days_of_cover||0)<=7) notes.push({title:`Закупка: ${p.sku}`, body:`Хватит примерно на ${Math.round(p.days_of_cover)} дн. При текущих продажах нужен заказ около ${p.reorder_qty||0} шт.`, level:'red', sort:1});
         else if((p.days_of_cover||0)<=14) notes.push({title:`Остатки под контролем: ${p.sku}`, body:`До нуля около ${Math.round(p.days_of_cover)} дн. Есть время подготовить следующую поставку.`, level:'amber', sort:2});
         if((p.contribution_per_unit||0)<120) notes.push({title:`Низкая прибыль: ${p.sku}`, body:`Прибыль на единицу ${money(p.contribution_per_unit)}. Проверь цену, логистику и рекламу.`, level:'amber', sort:3});
         if((p.forecast_profit_30d||0)<0) notes.push({title:`Отрицательный прогноз: ${p.sku}`, body:`Прогноз прибыли на 30 дн. ${money(p.forecast_profit_30d)}. Товар может работать в минус.`, level:'red', sort:2});
