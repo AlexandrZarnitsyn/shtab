@@ -11,6 +11,7 @@ import os
 import hashlib
 import secrets
 import hmac
+from urllib.parse import urlparse
 
 BASE_DIR = os.path.dirname(__file__)
 DEFAULT_DATA_DIR = os.environ.get('SHTAB_DATA_DIR') or ('/data' if os.path.isdir('/data') else os.path.dirname(BASE_DIR))
@@ -1391,8 +1392,15 @@ def create_invite(payload: InviteIn, request: Request, organization_id: int = Qu
         "INSERT INTO invites(organization_id, email, role, status, token, created_at, accepted_at) VALUES(?, ?, ?, ?, ?, ?, ?)",
         (organization_id, payload.email.lower(), payload.role, "Приглашение отправлено", token, iso_now(), "")
     )
-    base_url = str(request.base_url).rstrip("/")
-    public_link = f"{base_url}/invite.html?token={token}"
+    frontend_origin = (os.environ.get("FRONTEND_ORIGIN") or "").rstrip("/")
+    request_origin = (request.headers.get("origin") or "").rstrip("/")
+    referer = request.headers.get("referer") or ""
+    if not request_origin and referer:
+        parsed_referer = urlparse(referer)
+        if parsed_referer.scheme and parsed_referer.netloc:
+            request_origin = f"{parsed_referer.scheme}://{parsed_referer.netloc}"
+    public_origin = frontend_origin or request_origin or f"{request.base_url.scheme}://{request.base_url.netloc}"
+    public_link = f"{public_origin}/invite.html?token={token}" 
     log_action(conn, organization_id, user_id, "Приглашение отправлено", "invite", token, {"email": payload.email.lower(), "role": payload.role, "public_link": public_link})
     conn.commit()
     conn.close()
