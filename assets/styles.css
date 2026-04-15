@@ -725,3 +725,22 @@ html[data-theme="dark"] .select-link{
   display: none !important;
 }
 
+
+
+/* FORCE KILL ANY BACKGROUND */
+* {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+[class*="badge"],
+[class*="status"],
+[class*="tag"],
+[class*="label"] {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
