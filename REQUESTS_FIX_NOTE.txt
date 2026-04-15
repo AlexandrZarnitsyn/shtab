@@ -1,0 +1,9 @@
+This archive adds the missing Python dependency:
+- requests
+
+What to do after upload:
+1. Replace project files with this archive.
+2. Push to GitHub.
+3. Railway will redeploy automatically.
+
+If Railway still crashes, open Deploy Logs and check the next missing dependency.

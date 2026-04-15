@@ -1,4 +1,5 @@
 fastapi
-uvicorn
-sqlalchemy
+uvicorn[standard]
+email-validator
+requests
 psycopg2-binary
