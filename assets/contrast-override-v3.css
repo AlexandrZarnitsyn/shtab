@@ -74,3 +74,22 @@ body{background:
   padding: 0 !important;
 }
 
+
+
+/* PRECISE FIX FOR STATUS TEXT (Высокий etc.) */
+span, div {
+  background: none !important;
+}
+
+[class*="high"], [class*="danger"], [class*="status"], [class*="badge"] {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+/* remove colored boxes specifically */
+*[style*="background"] {
+  background: none !important;
+}
+
