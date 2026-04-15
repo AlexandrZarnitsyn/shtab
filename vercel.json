@@ -1,22 +1,6 @@
 {
-  "version": 2,
-  "cleanUrls": true,
-  "trailingSlash": false,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "https://shtab-production.up.railway.app/api/$1" },
-    { "source": "/", "destination": "/index.html" },
-    { "source": "/login", "destination": "/login.html" },
-    { "source": "/register", "destination": "/register.html" },
-    { "source": "/onboarding", "destination": "/onboarding.html" },
-    { "source": "/organizations", "destination": "/organizations.html" },
-    { "source": "/app", "destination": "/app.html" },
-    { "source": "/settings", "destination": "/settings.html" },
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/billing", "destination": "/billing.html" },
-    { "source": "/clients", "destination": "/clients.html" },
-    { "source": "/integrations", "destination": "/integrations.html" },
-    { "source": "/invite", "destination": "/invite.html" },
-    { "source": "/sku", "destination": "/sku.html" },
-    { "source": "/support", "destination": "/support.html" }
+    { "source": "/", "destination": "/index.html" }
   ]
 }

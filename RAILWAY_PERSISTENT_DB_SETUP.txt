@@ -1,0 +1,13 @@
+Чтобы база SQLite не слетала при redeploy на Railway:
+
+1. В Railway открой сервис backend.
+2. Добавь Volume и смонтируй его в /data
+3. В Settings -> Source -> Root Directory укажи: backend
+4. Start Command:
+   uvicorn app.main:app --host 0.0.0.0 --port $PORT
+5. После первого запуска база будет создаваться в /data/shtab.db
+
+В код уже добавлено:
+- приоритет пути из переменной SHTAB_DB_PATH
+- если есть /data, база берётся оттуда
+- если /data нет, используется локальный backend/shtab.db

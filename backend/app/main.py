@@ -13,7 +13,9 @@ import secrets
 import hmac
 
 BASE_DIR = os.path.dirname(__file__)
-DB_PATH = os.path.join(os.path.dirname(BASE_DIR), "shtab.db")
+DEFAULT_DATA_DIR = os.environ.get('SHTAB_DATA_DIR') or ('/data' if os.path.isdir('/data') else os.path.dirname(BASE_DIR))
+os.makedirs(DEFAULT_DATA_DIR, exist_ok=True)
+DB_PATH = os.environ.get('SHTAB_DB_PATH', os.path.join(DEFAULT_DATA_DIR, 'shtab.db'))
 SESSION_TTL_DAYS = 30
 SUPERADMIN_EMAIL = 's.zarnitsyn@yandex.ru'
 SUPERADMIN_PASSWORD = '1235476890qwE@'
@@ -88,6 +90,9 @@ def iso_now() -> str:
 
 
 def db():
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
