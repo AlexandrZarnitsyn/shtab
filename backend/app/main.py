@@ -11,7 +11,9 @@ import os
 import hashlib
 import secrets
 import hmac
+import smtplib
 from urllib.parse import urlparse
+from email.message import EmailMessage
 
 BASE_DIR = os.path.dirname(__file__)
 DEFAULT_DATA_DIR = os.environ.get('SHTAB_DATA_DIR') or ('/data' if os.path.isdir('/data') else os.path.dirname(BASE_DIR))
@@ -25,6 +27,14 @@ APP_SECRET = os.environ.get('SHTAB_APP_SECRET', 'shtab-local-dev-secret')
 WB_TOKEN_LIFETIME_DAYS = 180
 WB_TOKEN_WARNING_DAYS = 30
 DEFAULT_SYNC_INTERVAL_MINUTES = 15
+PASSWORD_RESET_TTL_MINUTES = int(os.environ.get('PASSWORD_RESET_TTL_MINUTES', '60'))
+SMTP_HOST = (os.environ.get('SMTP_HOST') or '').strip()
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '587'))
+SMTP_USER = (os.environ.get('SMTP_USER') or '').strip()
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+SMTP_FROM = (os.environ.get('SMTP_FROM') or SMTP_USER or 'no-reply@shtab.local').strip()
+SMTP_USE_TLS = (os.environ.get('SMTP_USE_TLS', 'true').lower() not in {'0', 'false', 'no'})
+FRONTEND_ORIGIN = (os.environ.get('FRONTEND_ORIGIN') or '').rstrip('/')
 
 
 app = FastAPI(title="Shtab Backend")
@@ -90,6 +100,97 @@ def iso_now() -> str:
     return now_utc().replace(microsecond=0).isoformat()
 
 
+
+def frontend_origin_from_request(request: Optional[Request] = None) -> str:
+    if FRONTEND_ORIGIN:
+        return FRONTEND_ORIGIN
+    request_origin = ''
+    referer = ''
+    if request is not None:
+        request_origin = (request.headers.get('origin') or '').rstrip('/')
+        referer = request.headers.get('referer') or ''
+    if not request_origin and referer:
+        parsed_referer = urlparse(referer)
+        if parsed_referer.scheme and parsed_referer.netloc:
+            request_origin = f"{parsed_referer.scheme}://{parsed_referer.netloc}"
+    if request_origin:
+        return request_origin
+    return 'http://localhost:3000'
+
+
+def build_password_reset_link(token: str, request: Optional[Request] = None) -> str:
+    return f"{frontend_origin_from_request(request)}/reset-password.html?token={token}"
+
+
+def send_email_message(to_email: str, subject: str, plain_text: str, html_text: Optional[str] = None):
+    if not SMTP_HOST:
+        raise RuntimeError('SMTP is not configured. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM.')
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = SMTP_FROM
+    msg['To'] = to_email
+    msg.set_content(plain_text)
+    if html_text:
+        msg.add_alternative(html_text, subtype='html')
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as smtp:
+        if SMTP_USE_TLS:
+            smtp.starttls()
+        if SMTP_USER:
+            smtp.login(SMTP_USER, SMTP_PASSWORD)
+        smtp.send_message(msg)
+
+
+def send_password_reset_email(to_email: str, full_name: str, reset_link: str):
+    safe_name = (full_name or 'пользователь').strip()
+    subject = 'Восстановление пароля — ШТАБ'
+    plain_text = (
+        f"Здравствуйте, {safe_name}!\n\n"
+        "Мы получили запрос на восстановление пароля в ШТАБ.\n\n"
+        f"Перейдите по ссылке, чтобы задать новый пароль:\n{reset_link}\n\n"
+        f"Ссылка действует {PASSWORD_RESET_TTL_MINUTES} минут. Если это были не вы, просто проигнорируйте это письмо."
+    )
+    html_text = (
+        '<html><body style="font-family:Arial,sans-serif;color:#0f172a">'
+        f'<p>Здравствуйте, {safe_name}!</p>'
+        '<p>Мы получили запрос на восстановление пароля в <b>ШТАБ</b>.</p>'
+        f'<p><a href="{reset_link}" style="display:inline-block;padding:12px 18px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px">Сбросить пароль</a></p>'
+        '<p>Если кнопка не открывается, используйте ссылку:</p>'
+        f'<p><a href="{reset_link}">{reset_link}</a></p>'
+        f'<p>Ссылка действует {PASSWORD_RESET_TTL_MINUTES} минут. Если это были не вы, просто проигнорируйте это письмо.</p>'
+        '</body></html>'
+    )
+    send_email_message(to_email, subject, plain_text, html_text)
+
+
+def issue_password_reset_token(conn, user_id: int) -> str:
+    token = secrets.token_urlsafe(32)
+    expires_at = (now_utc() + timedelta(minutes=PASSWORD_RESET_TTL_MINUTES)).replace(microsecond=0).isoformat()
+    conn.execute("UPDATE password_reset_tokens SET used_at = ? WHERE user_id = ? AND used_at = ''", (iso_now(), user_id))
+    conn.execute(
+        "INSERT INTO password_reset_tokens(user_id, token, expires_at, used_at, created_at) VALUES(?, ?, ?, '', ?)",
+        (user_id, token, expires_at, iso_now())
+    )
+    return token
+
+
+def get_active_password_reset_token(conn, token: str):
+    row = conn.execute(
+        "SELECT prt.*, u.email, u.full_name FROM password_reset_tokens prt JOIN users u ON u.id = prt.user_id WHERE prt.token = ?",
+        (token,)
+    ).fetchone()
+    if not row:
+        return None
+    if row['used_at']:
+        return None
+    try:
+        expires_at = datetime.fromisoformat(row['expires_at'])
+    except Exception:
+        return None
+    if expires_at <= now_utc():
+        return None
+    return row
+
+
 def db():
     db_dir = os.path.dirname(DB_PATH)
     if db_dir:
@@ -114,6 +215,7 @@ def init_db():
     cur.execute("CREATE TABLE IF NOT EXISTS organizations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, tariff TEXT NOT NULL, marketplace TEXT, owner_user_id INTEGER NOT NULL)")
     cur.execute("CREATE TABLE IF NOT EXISTS memberships (id INTEGER PRIMARY KEY AUTOINCREMENT, organization_id INTEGER NOT NULL, user_id INTEGER NOT NULL, role TEXT NOT NULL, status TEXT NOT NULL)")
     cur.execute("CREATE TABLE IF NOT EXISTS invites (id INTEGER PRIMARY KEY AUTOINCREMENT, organization_id INTEGER NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL, status TEXT NOT NULL)")
+    cur.execute("CREATE TABLE IF NOT EXISTS password_reset_tokens (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, token TEXT NOT NULL UNIQUE, expires_at TEXT NOT NULL, used_at TEXT DEFAULT '', created_at TEXT NOT NULL)")
     cur.execute("CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, organization_id INTEGER NOT NULL, sku TEXT NOT NULL, account TEXT NOT NULL, name TEXT NOT NULL, channel TEXT NOT NULL, warehouse TEXT NOT NULL, price REAL NOT NULL, unit_cost REAL NOT NULL, stock REAL NOT NULL, reserved REAL NOT NULL, inbound REAL NOT NULL, lead_time_days REAL NOT NULL, avg_daily_sales REAL NOT NULL, trend REAL NOT NULL, commission_rate REAL NOT NULL, logistics_per_unit REAL NOT NULL, ad_spend REAL NOT NULL, return_rate REAL NOT NULL)")
     cur.execute("CREATE TABLE IF NOT EXISTS product_imports (id INTEGER PRIMARY KEY AUTOINCREMENT, organization_id INTEGER NOT NULL, imported_by_user_id INTEGER NOT NULL, row_count INTEGER NOT NULL, mode TEXT NOT NULL DEFAULT 'replace', created_at TEXT NOT NULL)")
     cur.execute("CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, organization_id INTEGER NOT NULL, actor_user_id INTEGER, action TEXT NOT NULL, entity_type TEXT NOT NULL, entity_id TEXT DEFAULT '', details_json TEXT DEFAULT '{}', created_at TEXT NOT NULL)")
@@ -149,6 +251,8 @@ def init_db():
     add_column_if_missing(conn, "organizations", "blocked_reason TEXT DEFAULT ''")
 
     conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_memberships_org_user ON memberships(organization_id, user_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_products_org ON products(organization_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_product_imports_org_created ON product_imports(organization_id, created_at DESC)")
@@ -802,6 +906,15 @@ class LoginIn(BaseModel):
     password: str
 
 
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str
+    password: str
+
+
 class OrganizationIn(BaseModel):
     name: str
     tariff: str = "none"
@@ -992,6 +1105,55 @@ def login(payload: LoginIn):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_session(int(row["id"]))
     return {"user": {"id": int(row["id"]), "full_name": row["full_name"], "email": row["email"], "is_super_admin": is_super_admin_email(row['email'])}, "access_token": token}
+
+
+
+@app.post("/api/v1/auth/forgot-password")
+def forgot_password(payload: ForgotPasswordIn, request: Request):
+    conn = db()
+    user = conn.execute("SELECT id, email, full_name FROM users WHERE email = ?", (payload.email.lower().strip(),)).fetchone()
+    reset_link = None
+    if user:
+        token = issue_password_reset_token(conn, int(user['id']))
+        reset_link = build_password_reset_link(token, request)
+        conn.commit()
+        try:
+            send_password_reset_email(user['email'], user['full_name'], reset_link)
+        except Exception as exc:
+            conn.close()
+            raise HTTPException(status_code=500, detail=f"Не удалось отправить письмо: {str(exc)}")
+    else:
+        conn.commit()
+    conn.close()
+    return {"ok": True, "message": "Если аккаунт существует, мы отправили письмо со ссылкой для восстановления пароля.", "reset_link": reset_link if os.environ.get('SHTAB_EXPOSE_RESET_LINKS', '').lower() in {'1','true','yes'} else None}
+
+
+@app.get("/api/v1/auth/reset-password/validate")
+def validate_reset_password_token(token: str):
+    conn = db()
+    row = get_active_password_reset_token(conn, token)
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=400, detail="Ссылка недействительна или срок её действия истёк")
+    return {"ok": True, "email": row['email']}
+
+
+@app.post("/api/v1/auth/reset-password")
+def reset_password(payload: ResetPasswordIn):
+    if len(payload.password.strip()) < 8:
+        raise HTTPException(status_code=400, detail="Пароль должен содержать минимум 8 символов")
+    conn = db()
+    row = get_active_password_reset_token(conn, payload.token)
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=400, detail="Ссылка недействительна или срок её действия истёк")
+    password_hash = hash_password(payload.password)
+    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, int(row['user_id'])))
+    conn.execute("UPDATE password_reset_tokens SET used_at = ? WHERE id = ?", (iso_now(), int(row['id'])))
+    conn.execute("DELETE FROM sessions WHERE user_id = ?", (int(row['user_id']),))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "message": "Пароль обновлён. Теперь войдите с новым паролем."}
 
 
 @app.post("/api/v1/auth/logout")
