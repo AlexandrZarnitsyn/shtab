@@ -1391,7 +1391,7 @@ def create_invite(payload: InviteIn, organization_id: int = Query(...), authoriz
         "INSERT INTO invites(organization_id, email, role, status, token, created_at, accepted_at) VALUES(?, ?, ?, ?, ?, ?, ?)",
         (organization_id, payload.email.lower(), payload.role, "Приглашение отправлено", token, iso_now(), "")
     )
-    public_link = f"https://shtab.pages.dev/invite.html?token={token}"
+    public_link = f"{request.base_url.scheme}://{request.base_url.netloc}/invite.html?token={token}"
     log_action(conn, organization_id, user_id, "Приглашение отправлено", "invite", token, {"email": payload.email.lower(), "role": payload.role, "public_link": public_link})
     conn.commit()
     conn.close()
